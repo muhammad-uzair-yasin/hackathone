@@ -1,0 +1,66 @@
+{
+  "last_updated": "2026-05-16T14:42:20.842594+00:00",
+  "company": "BioRoute Cold-Chain Logistics",
+  "active_shipments": [
+    {
+      "shipment_id": "SHP-882",
+      "cargo_type": "Insulin (Temp Critical)",
+      "cargo_value_usd": 50000,
+      "max_idling_temp_threshold_celsius": 38,
+      "max_safe_idle_minutes": 45,
+      "destination": "District 3 Cold-Vault",
+      "destination_contact": "admin@district4hospital.health",
+      "primary_route": "Route 7 (via District 3)",
+      "current_status": "Emergency Reroute",
+      "driver_id": "DRV-104",
+      "vehicle_id": "VEH-007",
+      "eta_minutes": 35,
+      "backup_facility": "District 3 Cold-Vault",
+      "backup_route": "Route 7 (via District 3)",
+      "coordinates": {
+        "lat": 24.8607,
+        "lon": 67.0011
+      }
+    },
+    {
+      "shipment_id": "SHP-901",
+      "cargo_type": "Saline IVs",
+      "cargo_value_usd": 8000,
+      "max_idling_temp_threshold_celsius": 50,
+      "max_safe_idle_minutes": 180,
+      "destination": "District 1 Hub",
+      "destination_contact": "admin@district1clinic.health",
+      "primary_route": "Route 66",
+      "current_status": "In Transit (On Time)",
+      "driver_id": "DRV-211",
+      "vehicle_id": "VEH-012",
+      "eta_minutes": 55,
+      "backup_facility": "District 1 Hub",
+      "backup_route": "Route 66 Alt",
+      "coordinates": {
+        "lat": 24.9215,
+        "lon": 67.0781
+      }
+    },
+    {
+      "shipment_id": "SHP-915",
+      "cargo_type": "Blood Plasma (Ultra Critical)",
+      "cargo_value_usd": 120000,
+      "max_idling_temp_threshold_celsius": 35,
+      "max_safe_idle_minutes": 20,
+      "destination": "District 7 Trauma Center",
+      "destination_contact": "emergency@district7trauma.health",
+      "primary_route": "Highway 12",
+      "current_status": "In Transit (On Time)",
+      "driver_id": "DRV-099",
+      "vehicle_id": "VEH-003",
+      "eta_minutes": 18,
+      "backup_facility": "District 5 BioStorage",
+      "backup_route": "Inner Ring Road",
+      "coordinates": {
+        "lat": 24.8901,
+        "lon": 67.1234
+      }
+    }
+  ]
+}
