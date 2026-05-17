@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-05-17T08:37:41.383488",
+  "total_scenarios": 10,
+  "scenarios": [
+    {
+      "id": "SCN-001",
+      "label": "Heatwave + Traffic Block (Primary Test Scenario)",
+      "hazard_type": "Heatwave + Traffic Blockage",
+      "affects_shipment": "SHP-882",
+      "expected_action": "Emergency Reroute",
+      "text": "\ud83d\udea8 SINDH EMERGENCY ADVISORY \u2014 Jamshoro Corridor \u2014 Issued 2:15 PM\n\nWEATHER: Extreme heat warning for Hyderabad and Jamshoro districts.\nTemperature currently 42\u00b0C, forecast to reach 44\u00b0C by 3:00 PM.\n\nTRAFFIC: Multi-vehicle collision on N-5 National Highway near Hyderabad West\nBypass. ALL lanes blocked toward Jamshoro. Traffic backed up 4km. Estimated\nclearance: 2\u20133 hours. Avoid N-5 between Hyderabad and Jamshoro.\n\nMotorists advised to use M-9 Motorway via Thatta Bypass. Liaquat University\nHospital deliveries may face delays.\n\n\u2014 Sindh Highway Police & District Emergency Office\n"
+    },
+    {
+      "id": "SCN-002",
+      "label": "Social Media Style \u2014 Flooding Alert",
+      "hazard_type": "Flooding",
+      "affects_shipment": "SHP-882",
+      "expected_action": "Emergency Reroute",
+      "text": "@SindhTraffic: \ud83c\udf0a FLASH FLOOD on N-5 near Gharo Checkpoint!! Road submerged\ntoward Hyderabad. 3 trucks stuck. DO NOT cross Malir\u2013Thatta section!!\n\nRetweeted by @BioRoute_Dispatch: Karachi\u2192Jamshoro insulin runs \u2014 use M-9\nThatta Bypass. N-5 impassable at Gharo. #KarachiLogistics\n\nRain: 38mm in 2 hours. N-5 closure expected minimum 90 minutes near\nHyderabad West Bypass.\n"
+    },
+    {
+      "id": "SCN-003",
+      "label": "Formal News Article \u2014 Port Strike",
+      "hazard_type": "Port Strike",
+      "affects_shipment": null,
+      "expected_action": "Monitor / No immediate reroute",
+      "text": "KARACHI BUSINESS DAILY \u2014 May 16, 2026\n\nPORT WORKERS STRIKE ENTERS DAY TWO\n\nDock workers at the Port of Karachi have extended their strike into a second\nconsecutive day, causing significant delays in cargo processing. An estimated\n2,400 containers remain unloaded as negotiations between union representatives\nand port management broke down late Thursday evening.\n\nPort authorities confirmed that pharmaceutical cold-chain cargo has been\ngiven priority clearance, with a dedicated processing window from 6-10 AM daily.\nHowever, general cargo shipments face delays of 48-72 hours.\n\nThe strike is not expected to affect intra-city road deliveries at this time.\nDistrict-level distribution networks remain fully operational.\n\nOfficials expect the strike to continue through the weekend.\n"
+    },
+    {
+      "id": "SCN-004",
+      "label": "Radio-style broadcast \u2014 Storm Warning",
+      "hazard_type": "Storm",
+      "affects_shipment": "SHP-915",
+      "expected_action": "Emergency Reroute",
+      "text": "...and now for the traffic and weather update. It's 1:45 PM and here's\nwhat you need to know if you're on the roads right now.\n\nMurree Road toward Rawalpindi \u2014 AVOID IT. Heavy storm with visibility near\nzero. Wind gusts 85 km/h. A refrigerated truck flipped near Committee Chowk.\nMurree Road corridor completely shut down, no ETA on reopening.\n\nIslamabad Expressway and GT Road are your best alternates \u2014 expect 40-minute\ndelays due to redirected traffic toward Chaklala.\n\nTemperature drops accompanying the storm \u2014 currently 29\u00b0C and falling fast.\nForecast says it'll drop another 8 degrees by nightfall.\n\nIf you're a commercial driver, please contact your dispatch immediately.\nThis storm is no joke, folks. Stay safe out there. Back to you, Ahmed.\n"
+    },
+    {
+      "id": "SCN-005",
+      "label": "Government Advisory \u2014 Fuel Price Spike",
+      "hazard_type": "Fuel Price Spike",
+      "affects_shipment": null,
+      "expected_action": "No immediate reroute \u2014 cost impact only",
+      "text": "OFFICIAL NOTIFICATION\nMinistry of Energy and Petroleum\nRepublic Notice \u2014 Effective Immediately\n\nPETROLEUM PRICE REVISION \u2014 EFFECTIVE 16 MAY 2026, 00:01 HRS\n\nFollowing the global crude oil market correction, the government has revised\ndomestic fuel prices as follows:\n\n  \u2022 Petrol (RON 92): PKR 320/litre \u2192 PKR 367/litre (+14.7%)\n  \u2022 Diesel: PKR 298/litre \u2192 PKR 341/litre (+14.4%)\n  \u2022 LPG: No change\n\nThis revision will remain in effect until the next scheduled review on\nJune 1, 2026. Logistics operators are advised to review their operational\ncost structures accordingly.\n\nIssued by: Ministry of Energy and Petroleum\n"
+    },
+    {
+      "id": "SCN-006",
+      "label": "WhatsApp-style informal message \u2014 Road Closure",
+      "hazard_type": "Road Closure",
+      "affects_shipment": "SHP-901",
+      "expected_action": "Monitor (temp threshold not exceeded)",
+      "text": "yaar Route 66 is closed today from 11am to 5pm for VIP visit\npolice have blocked entire stretch from District 1 junction to Main Boulevard\nnobody getting through. tried myself got turned back\n\ntraffic is a nightmare. going through old city takes 45 mins extra at least\n\nif anyone is delivering to district 1 today good luck lol\n\nalso its hot today maybe 36 degrees? not as bad as yesterday but still\n"
+    },
+    {
+      "id": "SCN-007",
+      "label": "Multi-hazard official alert \u2014 Heatwave + Road Closure",
+      "hazard_type": "Heatwave + Road Closure",
+      "affects_shipment": "SHP-882",
+      "expected_action": "Emergency Reroute",
+      "text": "DISTRICT EMERGENCY MANAGEMENT BULLETIN\nDate: 16 May 2026 | Time: 14:30 PKT | Priority: CRITICAL\n\nDUAL HAZARD ALERT \u2014 SINDH (Karachi\u2013Hyderabad\u2013Jamshoro corridor)\n\nHAZARD 1 \u2014 EXTREME HEAT:\nPakistan Meteorological Department RED advisory for Hyderabad and Jamshoro.\nCurrent temperature: 41\u00b0C. Expected peak: 43\u00b0C at 15:30. Heat index ~48\u00b0C.\n\nHAZARD 2 \u2014 INFRASTRUCTURE:\nN-5 National Highway closed near Hyderabad West Bypass (KM 12.4) after a\nwater main burst. Diversion via service roads only. Repair ETA 18:00 PKT.\nHeavy trucks (>5 tonnes) cannot use the diversion.\n\nLogistics operators on N-5 Karachi\u2013Jamshoro must call Sindh Emergency\nManagement +92-21-4455667 before entering the corridor.\n\nCOMBINED RISK: Refrigerated trucks should not idle on N-5 in this heat.\n"
+    },
+    {
+      "id": "SCN-008",
+      "label": "Mixed English-Urdu informal news",
+      "hazard_type": "Traffic Blockage",
+      "affects_shipment": "SHP-882",
+      "expected_action": "Emergency Reroute",
+      "text": "Breaking news N-5 par Gharo ke qareeb bht bura accident hua hai.\n3 gaadiyaan crash ho gaye hain. Police aur rescue on the way.\n\nN-5 Karachi se Hyderabad tak completely jam hai. Log 2 ghante se phanse hue hain.\nTemperature bhi bohut zyada hai aaj \u2014 41 degrees C.\n\nAlternative M-9 Thatta Bypass try karo. Thora longer hai lekin clear hai.\n\nDrivers please apni dispatch ko inform karo immediately.\nMedical vehicles ko priority milegi agar aap emergency number call karo:\nDistrict Traffic Police: 1915\n"
+    },
+    {
+      "id": "SCN-009",
+      "label": "Structured weather API response (JSON-like)",
+      "hazard_type": "Heatwave",
+      "affects_shipment": "SHP-882",
+      "expected_action": "Emergency Reroute",
+      "text": "WEATHER SERVICE ALERT \u2014 AUTO-GENERATED NOTIFICATION\n{alert_id: \"PKM-20260516-D4-001\", severity: \"EXTREME\", type: \"HEAT_ADVISORY\"}\n\nLocation: District 4, City Zone B\nCurrent Conditions:\n  - Temperature: 42.3\u00b0C (feels like 47.1\u00b0C)\n  - Humidity: 68%\n  - Wind: 8 km/h (southward)\n  - UV Index: 11 (Extreme)\n\nForecast (next 4 hours):\n  - 15:00: 43.1\u00b0C\n  - 16:00: 42.8\u00b0C\n  - 17:00: 41.5\u00b0C\n  - 18:00: 39.2\u00b0C\n\nTransportation Impact:\n  - Highway 9: Reported vehicle breakdowns due to heat. 2-lane restriction.\n    Advisory: Avoid if possible. High ambient temperature risk for cold-chain cargo.\n  - Route 7: Clear. Recommended alternate.\n\nAlert expires: 19:00 PKT\n\n[END OF AUTOMATED ALERT]\n"
+    },
+    {
+      "id": "SCN-010",
+      "label": "Safe scenario \u2014 No hazard detected",
+      "hazard_type": "None",
+      "affects_shipment": null,
+      "expected_action": "No action \u2014 all clear",
+      "text": "Good afternoon Karachi. Here's your afternoon traffic update for Friday,\nMay 16th, 2026.\n\nRoads are largely clear across the city. Minor delays on the Ring Road\nnear Junction 12 due to routine maintenance \u2014 expect 10 minute delays.\nAll major highways including Highway 9, Highway 12, and Route 66 are\noperating normally with no significant incidents reported.\n\nWeather is pleasant today \u2014 28\u00b0C with a light breeze from the coast.\nExcellent driving conditions across all districts.\n\nKarachi Port: Normal operations. No delays reported.\n\nHave a great Friday evening everyone. Drive safe!\n"
+    }
+  ]
+}

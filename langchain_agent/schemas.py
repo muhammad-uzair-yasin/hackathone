@@ -1,132 +1,351 @@
 """
-schemas.py — Pydantic response_format models for all three subagents.
+schemas.py — Input/output contracts for BioRoute multi-agent pipeline.
 
-Using response_format on subagents guarantees the parent orchestrator always
-receives valid, parseable JSON (not free-form text). This eliminates the most
-common multi-agent failure mode: broken JSON between steps.
+Each subagent has:
+  - *Input model  — what the orchestrator passes via task()
+  - *Output model — structured response_format (Pydantic)
 
-Each model is also used in the SSE stream so the React Native app can
-deserialize events directly.
+Aligns with PROJECT_SCOPE.md Steps 1–4 and mock CRM fields in active_shipments.json.
 """
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Literal, Optional
+
 from pydantic import BaseModel, Field
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subagent 1 — Hazard Extractor output
+# Agent 1 — Hazard Extractor
 # ─────────────────────────────────────────────────────────────────────────────
 
+class HazardExtractorInput(BaseModel):
+    """INPUT to hazard-extractor: raw unstructured alert only."""
+
+    raw_alert_text: str = Field(
+        description="Full text from news, weather, traffic, or social post."
+    )
+
+
 class HazardExtraction(BaseModel):
-    """
-    Structured output from the hazard-extractor subagent.
-    Produced by reading raw unstructured news / weather / traffic text and
-    pulling out ONLY actionable logistics hazard data — never a generic summary.
-    """
+    """OUTPUT from hazard-extractor (Step 1 — Insight Extraction)."""
 
     hazard_detected: bool = Field(
-        description="True if any hazard relevant to logistics is found in the text."
+        description="True if any logistics-relevant hazard is present."
     )
     location: str = Field(
-        description=(
-            "The specific district, area, or route name where the hazard is occurring. "
-            "Example: 'District 4', 'Highway 9', 'Port of Karachi'."
-        )
+        description="Primary location: district, junction, or corridor name."
+    )
+    affected_districts: List[str] = Field(
+        default_factory=list,
+        description="All district names mentioned or implied, e.g. ['District 1', 'District 4'].",
     )
     hazard_type: str = Field(
         description=(
-            "Category of hazard. One of: 'Heatwave', 'Traffic Blockage', "
-            "'Flooding', 'Storm', 'Road Closure', 'Fuel Price Spike', 'Port Strike', "
-            "'Earthquake', 'Wildfire', 'Unknown'."
+            "Primary category: Heatwave | Traffic Blockage | Flooding | Storm | "
+            "Road Closure | Fuel Price Spike | Combined | Unknown."
         )
     )
-    severity_level: str = Field(
+    severity_level: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = Field(
+        description="Operational severity for cold-chain routing."
+    )
+    severity_details: str = Field(
         description=(
-            "Operational severity: 'LOW', 'MEDIUM', 'HIGH', or 'CRITICAL'."
+            "Measurable facts only, e.g. 'Highway 9 blocked; 42°C until 5pm; +45 min delay'."
         )
     )
     affected_routes: List[str] = Field(
         default_factory=list,
-        description="List of route names or highway numbers directly affected."
+        description="Highways or routes directly blocked or degraded.",
+    )
+    temperature_celsius: Optional[float] = Field(
+        default=None,
+        description="Ambient temperature in °C if stated.",
+    )
+    estimated_duration_minutes: Optional[int] = Field(
+        default=None,
+        description="How long the hazard is expected to last.",
+    )
+    estimated_delay_minutes: Optional[int] = Field(
+        default=None,
+        description="Extra travel delay in minutes if stated (e.g. diversion).",
+    )
+    closure_window: Optional[str] = Field(
+        default=None,
+        description="Road closure time window if stated, e.g. '11:00–17:00'.",
+    )
+    display_summary: str = Field(
+        description="One judge-facing sentence, max 120 characters.",
+    )
+    why_brief: str = Field(
+        description="≤15 words: why this alert matters for cold-chain routing.",
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subagent 2 — Impact Analyzer output
+# Agent 2 — Fleet Scout
 # ─────────────────────────────────────────────────────────────────────────────
 
+class ActiveShipmentBrief(BaseModel):
+    """One row from active_shipments.json for fleet overview."""
+
+    shipment_id: str
+    route_name: str
+    cargo_type: str
+    eta_minutes: Optional[int] = None
+    destination: str = Field(description="Last stop on current route.")
+
+
+class FleetScoutOutput(BaseModel):
+    """OUTPUT from fleet-scout — who is on the road right now."""
+
+    total_active: int = Field(description="Count of active_shipments in CRM.")
+    active_shipments: List[ActiveShipmentBrief] = Field(
+        default_factory=list,
+        description="All shipments currently in transit from the database.",
+    )
+    display_summary: str = Field(
+        description="One sentence listing how many trucks and main corridors.",
+    )
+    why_brief: str = Field(
+        description="≤15 words: why we list the fleet before matching routes.",
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Agent 3 — Route Impact Analyzer
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ImpactAnalyzerInput(BaseModel):
+    """INPUT to impact-analyzer — orchestrator passes raw alert + optional fleet JSON in task text."""
+
+    raw_alert_text: str = Field(
+        description="Full unstructured news; agent infers hazard itself."
+    )
+    fleet: Optional[FleetScoutOutput] = Field(
+        default=None,
+        description="Optional fleet snapshot from fleet-scout (not hazard JSON).",
+    )
+
+
+class AlternativeRouteOption(BaseModel):
+    """One pre-planned alternate path from active_shipments.json."""
+
+    id: str = Field(description="Alternative id, e.g. A1.")
+    name: str = Field(description="Route name — must match alternative_routes[].name.")
+    eta_minutes: Optional[int] = Field(default=None, description="Estimated minutes for this path.")
+    notes: Optional[str] = Field(default=None, description="When to prefer this alternative.")
+
+
 class ImpactAnalysis(BaseModel):
-    """
-    Structured output from the impact-analyzer subagent.
-    Connects the extracted hazard to a specific active shipment and calculates
-    the real-world operational and financial consequence.
-    """
+    """OUTPUT from impact-analyzer (Step 3 — route impact on fleet)."""
 
     impact_detected: bool = Field(
-        description="True if at least one active shipment is at risk from the hazard."
+        description="True if at least one active shipment is affected."
     )
     affected_shipment_id: Optional[str] = Field(
         default=None,
-        description="The ID of the shipment at highest risk. E.g. 'SHP-882'. Null if none."
+        description="Highest-risk shipment ID from active_shipments.json.",
+    )
+    matched_shipment_ids: List[str] = Field(
+        default_factory=list,
+        description="All shipment IDs on affected routes or destinations.",
+    )
+    cargo_type: Optional[str] = Field(
+        default=None,
+        description="Cargo description for affected shipment.",
+    )
+    cargo_value_usd: Optional[int] = Field(
+        default=None,
+        description="Financial value of affected cargo in USD.",
+    )
+    criticality_tier: Optional[Literal["ULTRA", "CRITICAL", "STANDARD"]] = Field(
+        default=None,
+        description="ULTRA=plasma/organs; CRITICAL=insulin/vaccines; STANDARD=saline/etc.",
+    )
+    primary_route: Optional[str] = Field(
+        default=None,
+        description="Shipment's current planned route.",
+    )
+    destination: Optional[str] = Field(
+        default=None,
+        description="Shipment's destination facility.",
+    )
+    current_status: Optional[str] = Field(
+        default=None,
+        description="Shipment status before action, e.g. 'In Transit (On Time)'.",
+    )
+    alternative_routes: List[AlternativeRouteOption] = Field(
+        default_factory=list,
+        description="All four alternative_routes from the shipment file (id, name, eta, notes).",
     )
     backup_facility: Optional[str] = Field(
         default=None,
-        description="The backup cold-storage facility. E.g. 'District 3 Cold-Vault'. Null if none."
+        description="Last stop on the best candidate alternative (for action-planner).",
     )
     backup_route: Optional[str] = Field(
         default=None,
-        description="The backup route. E.g. 'Route 7'. Null if none."
+        description="Name of the best candidate alternative route (action-planner may override).",
+    )
+    ambient_temperature_celsius: Optional[float] = Field(
+        default=None,
+        description="External temp used in calculation (from hazard or default).",
     )
     operational_impact: str = Field(
         description=(
-            "Brief summary of operational consequence. E.g. "
-            "'Truck stuck on Highway 9 — cooling unit will fail in 45 minutes.'"
+            "Plain-language impact, e.g. 'Truck on Highway 9 — cooling fails in 45 min'."
         )
     )
-    risk_level: str = Field(
-        description="Risk level: 'LOW', 'MEDIUM', 'HIGH', or 'CRITICAL'."
+    time_to_failure_minutes: Optional[int] = Field(
+        default=None,
+        description="Minutes until thermal spoilage if no action.",
+    )
+    financial_consequence: str = Field(
+        description=(
+            "E.g. '$50,000 cargo spoilage + critical medical shortage' or 'No financial exposure'."
+        )
+    )
+    medical_consequence: Optional[str] = Field(
+        default=None,
+        description="Hospital/patient impact if cargo spoils or is delayed.",
+    )
+    risk_level: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = Field(
+        description="Overall risk after cross-checking hazard + shipment."
     )
     requires_immediate_action: bool = Field(
-        description="True if action must be taken within the next 30 minutes to prevent loss."
+        description=(
+            "True if route blocked AND temp above cargo threshold AND time_to_failure < 60."
+        )
+    )
+    action_reason: str = Field(
+        description="Why action is or is not required — one sentence for judges.",
+    )
+    display_summary: str = Field(
+        description="One judge-facing sentence with ID, route, time, and money.",
+    )
+    why_brief: str = Field(
+        description="≤15 words: why this shipment is or is not affected.",
+    )
+    unaffected_shipment_ids: List[str] = Field(
+        default_factory=list,
+        description="Active IDs that are clear of the hazard corridor.",
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subagent 3 — Action Planner output
+# Agent 4 — Action Planner
 # ─────────────────────────────────────────────────────────────────────────────
 
-class DatabaseUpdatePayload(BaseModel):
-    """The exact fields to update in active_shipments.json."""
+class ActionPlannerInput(BaseModel):
+    """INPUT to action-planner — raw alert + impact JSON in task text."""
+
+    raw_alert_text: str = Field(
+        description="Full unstructured news; agent infers constraints itself."
+    )
+    impact: ImpactAnalysis
+
+
+class DatabaseSimulationPayload(BaseModel):
+    """CRM update payload — written by update_crm_tool (Step 4 simulation)."""
+
     shipment_id: str
-    new_status: str = Field(description="E.g. 'Emergency Reroute'")
-    new_destination: str = Field(description="E.g. 'District 3 Cold-Vault'")
-    new_route: str = Field(description="E.g. 'Route 7 (via District 3)'")
+    new_status: str = Field(
+        description="Usually 'Emergency Reroute' when diverting."
+    )
+    new_destination: str = Field(
+        description="Last place on the chosen alternative's stops[] array."
+    )
+    new_route: str = Field(
+        description="Exact alternative_routes[].name chosen by action-planner."
+    )
+
+
+class NotificationSimulation(BaseModel):
+    """Hospital notification payload — written by notify_tool (Step 4 simulation)."""
+
+    recipient: str = Field(
+        description="Hospital or clinic administration name."
+    )
+    message_draft: str = Field(
+        description="Full email/SMS body; max 400 words."
+    )
+    urgency_level: Literal["IMMEDIATE", "HIGH", "MEDIUM", "LOW"] = Field(
+        description="Notification priority."
+    )
+    channels: List[str] = Field(
+        default_factory=lambda: ["email", "sms"],
+        description="Delivery channels simulated.",
+    )
 
 
 class ActionPlan(BaseModel):
-    """
-    Structured output from the action-planner subagent.
-    Produces the exact payloads needed for the orchestrator to execute
-    the CRM update and notification simulation — the CRITICAL REQUIREMENT.
-    """
+    """OUTPUT from action-planner (Step 3 — Action Generation)."""
 
     recommended_action: str = Field(
-        description=(
-            "Clear, domain-relevant action statement. "
-            "E.g. 'Immediately reroute SHP-882 to District 3 Cold-Vault to prevent insulin spoilage.'"
-        )
+        description="Domain-specific rescue plan in one sentence.",
     )
-    urgency: str = Field(
-        description="One of: 'IMMEDIATE' (act now), 'SOON' (within 1 hour), 'MONITOR' (watch and wait)."
+    action_type: Literal["REROUTE", "MONITOR", "HOLD_AT_FACILITY", "NO_ACTION"] = Field(
+        description="Primary action category."
     )
-    database_update_payload: DatabaseUpdatePayload = Field(
-        description="Exact fields to update in the CRM / active_shipments.json."
+    urgency: Literal["IMMEDIATE", "SOON", "MONITOR"] = Field(
+        description="How quickly the orchestrator must execute."
     )
-    notification_recipient: str = Field(
-        description="Who to notify. E.g. 'District 4 General Hospital Administration'."
+    estimated_eta_minutes: Optional[int] = Field(
+        default=None,
+        description="Estimated minutes to new destination after reroute.",
     )
-    notification_draft: str = Field(
-        description="Full professional notification message string."
+    selected_alternative_id: Optional[str] = Field(
+        default=None,
+        description="Id of chosen alternative, e.g. A1.",
     )
+    selected_route_name: Optional[str] = Field(
+        default=None,
+        description="Exact alternative_routes[].name — best of four for this hazard.",
+    )
+    selection_rationale: Optional[str] = Field(
+        default=None,
+        description="Why this alternative beat the other three (traffic, temp, ETA).",
+    )
+    database_simulation_payload: DatabaseSimulationPayload = Field(
+        description="Exact fields for update_crm_tool."
+    )
+    notification_simulation: NotificationSimulation = Field(
+        description="Exact fields for notify_tool."
+    )
+    display_summary: str = Field(
+        description="One judge-facing sentence describing the planned action.",
+    )
+    why_brief: str = Field(
+        description="≤15 words: why this alternative won vs the other three.",
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Orchestrator — pipeline log (Step 6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class PipelineStepLog(BaseModel):
+    """One step embedded in summary.md by write_summary_tool."""
+
+    step_1_hazard_extraction: dict = Field(default_factory=dict)
+    step_2_fleet_scout: dict = Field(default_factory=dict)
+    step_3_impact_analysis: dict = Field(default_factory=dict)
+    step_4_action_plan: dict = Field(default_factory=dict)
+    step_5_crm_update: dict = Field(default_factory=dict)
+    step_6_notification: dict = Field(default_factory=dict)
+
+
+class SessionLogEntry(BaseModel):
+    """Full session record embedded in summary.md."""
+
+    session_id: str
+    timestamp: str
+    status: str = Field(description="'completed' or 'failed_at_<step>'.")
+    pipeline: PipelineStepLog
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Backward-compatible aliases (older logs / mobile may use these names)
+# ─────────────────────────────────────────────────────────────────────────────
+
+DatabaseUpdatePayload = DatabaseSimulationPayload

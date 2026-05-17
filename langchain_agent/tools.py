@@ -23,8 +23,108 @@ from langchain.tools import tool
 # Absolute path to the data directory — safe to use from any working directory
 DATA_DIR = Path(__file__).parent / "data"
 SHIPMENTS_FILE = DATA_DIR / "active_shipments.json"
+BASELINE_SHIPMENTS_FILE = DATA_DIR / "active_shipments_baseline.json"
 NOTIFICATIONS_FILE = DATA_DIR / "notifications.json"
-STATE_LOG_FILE = DATA_DIR / "state_log.json"
+SUMMARY_FILE = DATA_DIR / "summary.md"
+
+
+def _route_points(shipment: dict, *, alternative_name: str | None = None) -> list:
+    if alternative_name:
+        alt = _find_alternative(shipment, alternative_name)
+        if alt:
+            return list(alt.get("stops") or [])
+    return list(shipment.get("route") or [])
+
+
+def _find_alternative(shipment: dict, route_name: str) -> dict | None:
+    """Match alternative by exact name or id (e.g. A1)."""
+    if not route_name:
+        return None
+    for alt in shipment.get("alternative_routes") or []:
+        if alt.get("name") == route_name or alt.get("id") == route_name:
+            return alt
+    # Legacy single backup
+    if shipment.get("backup_route_name") == route_name:
+        return {
+            "name": shipment["backup_route_name"],
+            "stops": shipment.get("backup_route") or [],
+        }
+    return None
+
+
+def _route_destination(shipment: dict, *, alternative_name: str | None = None) -> str | None:
+    points = _route_points(shipment, alternative_name=alternative_name)
+    if not points:
+        return None
+    last = points[-1]
+    return last.get("place") if isinstance(last, dict) else str(last)
+
+
+def _shipment_route_snapshot(shipment: dict) -> dict:
+    """Fields needed for UI before/after route comparison."""
+    route = [dict(p) for p in _route_points(shipment)]
+    return {
+        "shipment_id": shipment["shipment_id"],
+        "current_status": shipment.get("current_status"),
+        "route_name": shipment.get("route_name"),
+        "route": route,
+        "destination": _route_destination(shipment),
+    }
+
+
+def _apply_alternative_route(record: dict, route_name: str) -> bool:
+    """Swap active route to the chosen entry in alternative_routes."""
+    alt = _find_alternative(record, route_name)
+    if not alt:
+        return False
+    stops = alt.get("stops") or []
+    if not stops:
+        return False
+    record["route"] = [dict(p) for p in stops]
+    record["route_name"] = alt.get("name") or route_name
+    if alt.get("eta_minutes") is not None:
+        record["eta_minutes"] = alt["eta_minutes"]
+    return True
+
+
+def _is_emergency_reroute_status(status: str) -> bool:
+    return "reroute" in (status or "").lower()
+
+
+def reset_active_shipments_to_baseline() -> bool:
+    """Restore CRM mock DB to demo baseline (Pakistani routes)."""
+    if not BASELINE_SHIPMENTS_FILE.exists():
+        return False
+    with open(BASELINE_SHIPMENTS_FILE, "r") as f:
+        data = json.load(f)
+    data["last_updated"] = datetime.now(timezone.utc).isoformat()
+    with open(SHIPMENTS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+    clear_summary_file()
+    return True
+
+
+def reset_demo_session() -> dict:
+    """
+    Full demo reset for re-testing: CRM shipments, notifications, decision log.
+    """
+    shipments_ok = reset_active_shipments_to_baseline()
+    notifications_ok = False
+    try:
+        NOTIFICATIONS_FILE.write_text(
+            json.dumps({"notifications": []}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        notifications_ok = True
+    except OSError:
+        pass
+    return {
+        "ok": shipments_ok and notifications_ok,
+        "shipments_reset": shipments_ok,
+        "notifications_cleared": notifications_ok,
+        "summary_cleared": True,
+        "message": "Demo reset — CRM, notifications, and summary restored.",
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,10 +151,13 @@ def update_crm_tool(
         shipment_id: The exact shipment ID to update. E.g. 'SHP-882'.
         new_status: The new operational status. Use 'Emergency Reroute' for reroutes.
         new_destination: The new destination address / facility name.
-        new_route: The new route the driver should take. E.g. 'Route 7 (via District 3)'.
+        new_route: Must exactly match one alternative_routes[].name from the shipment file
+            (action-planner picks the best of four alternatives).
+
+    On Emergency Reroute, the tool swaps route[] to the chosen alternative's stops[].
 
     Returns:
-        A JSON string containing the before_state, after_state, and update timestamp.
+        A JSON string containing before_state and after_state (route arrays), and timestamp.
         Returns an error string if the shipment_id is not found.
     """
     # ── Load the database ────────────────────────────────────────────────────
@@ -80,31 +183,26 @@ def update_crm_tool(
             f"Available IDs: {available_ids}"
         )
 
-    # ── Capture before state ─────────────────────────────────────────────────
-    before_state = {
-        "shipment_id": target["shipment_id"],
-        "current_status": target["current_status"],
-        "destination": target["destination"],
-        "primary_route": target["primary_route"],
-    }
+    record = data["active_shipments"][target_index]
+    before_state = _shipment_route_snapshot(record)
 
     # ── Apply update ─────────────────────────────────────────────────────────
-    data["active_shipments"][target_index]["current_status"] = new_status
-    data["active_shipments"][target_index]["destination"] = new_destination
-    data["active_shipments"][target_index]["primary_route"] = new_route
+    record["current_status"] = new_status
+    if _is_emergency_reroute_status(new_status):
+        if not _apply_alternative_route(record, new_route):
+            return (
+                f"ERROR: new_route '{new_route}' not found in alternative_routes for {shipment_id}. "
+                f"Available: {[a.get('name') for a in record.get('alternative_routes', [])]}"
+            )
+    else:
+        record["route_name"] = new_route
+
     data["last_updated"] = datetime.now(timezone.utc).isoformat()
 
-    # ── Save to disk ─────────────────────────────────────────────────────────
     with open(SHIPMENTS_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
-    # ── Capture after state ──────────────────────────────────────────────────
-    after_state = {
-        "shipment_id": shipment_id,
-        "current_status": new_status,
-        "destination": new_destination,
-        "primary_route": new_route,
-    }
+    after_state = _shipment_route_snapshot(record)
 
     result = {
         "success": True,
@@ -114,7 +212,7 @@ def update_crm_tool(
         "message": (
             f"SUCCESS: Shipment {shipment_id} updated. "
             f"Status: '{before_state['current_status']}' → '{new_status}'. "
-            f"Route: '{before_state['primary_route']}' → '{new_route}'."
+            f"Route: '{before_state.get('route_name')}' → '{record.get('route_name')}'."
         ),
     }
 
@@ -196,79 +294,132 @@ def notify_tool(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Tool 3 — Write State Log (Agent Trace)
+# Tool 3 — Write run summary (summary.md)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@tool
-def write_state_log_tool(
+def _safe_parse_json(s: str) -> dict:
+    try:
+        return json.loads(s)
+    except (json.JSONDecodeError, TypeError):
+        return {"raw": str(s)}
+
+
+def _format_summary_markdown(
     session_id: str,
     status: str,
+    timestamp: str,
+    summary_markdown: str,
+    pipeline: dict,
+) -> str:
+    """Short human-readable summary.md (detailed pipeline kept in HTML comment for API)."""
+    sections = [
+        "# BioRoute Run Summary",
+        "",
+        f"_Session {session_id} · {status} · {timestamp}_",
+        "",
+        summary_markdown.strip() or "_No summary provided._",
+        "",
+        "<!--BIOROUTE_PIPELINE",
+        json.dumps(
+            {
+                "session_id": session_id,
+                "timestamp": timestamp,
+                "status": status,
+                "pipeline": pipeline,
+            },
+            indent=2,
+        ),
+        "-->",
+    ]
+    return "\n".join(sections)
+
+
+def clear_summary_file() -> None:
+    """Reset summary.md before a new agent run."""
+    SUMMARY_FILE.write_text(
+        "# BioRoute Run Summary\n\n"
+        "_Waiting for agent run…_\n",
+        encoding="utf-8",
+    )
+
+
+def read_summary_session_record() -> dict:
+    """Load session metadata + pipeline from summary.md."""
+    if not SUMMARY_FILE.exists():
+        return {}
+    text = SUMMARY_FILE.read_text(encoding="utf-8")
+    start = text.find("<!--BIOROUTE_PIPELINE")
+    end = text.find("-->", start)
+    if start < 0 or end < 0:
+        return {}
+    blob = text[start + len("<!--BIOROUTE_PIPELINE") : end].strip()
+    try:
+        return json.loads(blob)
+    except json.JSONDecodeError:
+        return {}
+
+
+def read_summary_public_markdown() -> str:
+    """Human-visible markdown only (no pipeline blob)."""
+    if not SUMMARY_FILE.exists():
+        return ""
+    raw = SUMMARY_FILE.read_text(encoding="utf-8")
+    cut = raw.find("<!--BIOROUTE_PIPELINE")
+    return (raw[:cut] if cut > 0 else raw).strip()
+
+
+@tool
+def write_summary_tool(
+    session_id: str,
+    status: str,
+    summary_markdown: str,
     hazard_data: str,
-    impact_data: str,
-    action_data: str,
-    crm_update_result: str,
-    notification_result: str,
+    fleet_data: str = "{}",
+    impact_data: str = "{}",
+    action_data: str = "{}",
+    crm_update_result: str = "{}",
+    notification_result: str = "{}",
 ) -> str:
     """
-    Writes the complete agent trace log to state_log.json.
-
-    This is the final step in every workflow. It records the full pipeline
-    result so the React Native app can display the agent trace, the before/after
-    state, and the reasoning chain.
-
-    Call this tool LAST, after both update_crm_tool and notify_tool have completed.
+    Write a SHORT plain-language summary to summary.md. Call LAST after all other steps.
 
     Args:
-        session_id: A unique identifier for this run. E.g. 'REQ-1092'.
-        status: Final status of the pipeline. Use 'completed' on success or
-            'failed_at_<step>' if a step failed.
-        hazard_data: JSON string from the hazard-extractor subagent result.
-        impact_data: JSON string from the impact-analyzer subagent result.
-        action_data: JSON string from the action-planner subagent result.
-        crm_update_result: JSON string returned by update_crm_tool.
-        notification_result: JSON string returned by notify_tool.
+        session_id: Unique run id, e.g. 'REQ-143052'.
+        status: 'completed' or 'failed_at_<step>'.
+        summary_markdown: 3–6 sentences in simple English for a human reader:
+            what the alert said, what you found (hazard/fleet/impact), what action you took
+            (reroute, CRM, hospital alert) or why no action was needed.
+        hazard_data: JSON string from hazard-extractor.
+        fleet_data: JSON string from fleet-scout (or '{}' if skipped).
+        impact_data: JSON string from impact-analyzer.
+        action_data: JSON string from action-planner (or '{}' if skipped).
+        crm_update_result: JSON string from update_crm_tool (or '{}' if skipped).
+        notification_result: JSON string from notify_tool (or '{}' if skipped).
 
     Returns:
-        Confirmation string with the log file path and record count.
+        JSON confirmation with file path and byte size.
     """
     timestamp = datetime.now(timezone.utc).isoformat()
-
-    # Parse each JSON string safely
-    def safe_parse(s: str) -> dict:
-        try:
-            return json.loads(s)
-        except (json.JSONDecodeError, TypeError):
-            return {"raw": str(s)}
-
-    log_record = {
-        "session_id": session_id,
-        "timestamp": timestamp,
-        "status": status,
-        "pipeline": {
-            "step_1_hazard_extraction": safe_parse(hazard_data),
-            "step_2_impact_analysis": safe_parse(impact_data),
-            "step_3_action_plan": safe_parse(action_data),
-            "step_4_crm_update": safe_parse(crm_update_result),
-            "step_5_notification": safe_parse(notification_result),
-        },
+    pipeline = {
+        "step_1_hazard_extraction": _safe_parse_json(hazard_data),
+        "step_2_fleet_scout": _safe_parse_json(fleet_data),
+        "step_3_impact_analysis": _safe_parse_json(impact_data),
+        "step_4_action_plan": _safe_parse_json(action_data),
+        "step_5_crm_update": _safe_parse_json(crm_update_result),
+        "step_6_notification": _safe_parse_json(notification_result),
     }
-
-    # ── Load existing log or start fresh ─────────────────────────────────────
-    existing = {"logs": []}
-    if STATE_LOG_FILE.exists():
-        try:
-            with open(STATE_LOG_FILE, "r") as f:
-                existing = json.load(f)
-        except json.JSONDecodeError:
-            pass
-
-    existing["logs"].append(log_record)
-
-    with open(STATE_LOG_FILE, "w") as f:
-        json.dump(existing, f, indent=2)
-
-    total_logs = len(existing["logs"])
-    return (
-        f"STATE LOG WRITTEN: Session '{session_id}' | Status: '{status}' | "
-        f"Log file: {STATE_LOG_FILE} | Total records: {total_logs}"
+    body = _format_summary_markdown(
+        session_id, status, timestamp, summary_markdown, pipeline
     )
+    SUMMARY_FILE.write_text(body, encoding="utf-8")
+    result = {
+        "success": True,
+        "session_id": session_id,
+        "status": status,
+        "file": SUMMARY_FILE.name,
+        "bytes": len(body.encode("utf-8")),
+        "message": f"Run summary written to {SUMMARY_FILE.name}",
+    }
+    return json.dumps(result, indent=2)
+
+

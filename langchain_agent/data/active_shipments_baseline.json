@@ -1,0 +1,254 @@
+{
+  "last_updated": "2026-05-17T14:00:00Z",
+  "company": "BioRoute Cold-Chain Logistics — Pakistan",
+  "active_shipments": [
+    {
+      "shipment_id": "SHP-882",
+      "cargo_type": "Insulin (Temp Critical)",
+      "cargo_value_usd": 50000,
+      "max_idling_temp_threshold_celsius": 38,
+      "max_safe_idle_minutes": 45,
+      "current_status": "In Transit (On Time)",
+      "eta_minutes": 40,
+      "destination_contact": "admin@liaquathospital.edu.pk",
+      "route_name": "N-5 Karachi → Jamshoro",
+      "route": [
+        { "place": "Karachi Depot", "lat": 24.783, "lon": 67.36 },
+        { "place": "Hyderabad West", "lat": 25.382, "lon": 68.368 },
+        { "place": "Liaquat Hospital, Jamshoro", "lat": 25.428, "lon": 68.278 }
+      ],
+      "alternative_routes": [
+        {
+          "id": "A1",
+          "name": "M-9 Thatta Bypass",
+          "eta_minutes": 52,
+          "notes": "Avoids N-5 jam; cold-vault handoff at Hyderabad",
+          "stops": [
+            { "place": "Karachi Depot", "lat": 24.783, "lon": 67.36 },
+            { "place": "Thatta Bypass", "lat": 24.748, "lon": 67.925 },
+            { "place": "Hyderabad Cold-Vault", "lat": 25.401, "lon": 68.342 }
+          ]
+        },
+        {
+          "id": "A2",
+          "name": "Coastal Highway (Gharo)",
+          "eta_minutes": 58,
+          "notes": "Scenic coastal; moderate heat exposure",
+          "stops": [
+            { "place": "Karachi Depot", "lat": 24.783, "lon": 67.36 },
+            { "place": "Gharo Coastal", "lat": 24.735, "lon": 67.62 },
+            { "place": "Hyderabad Cold-Vault", "lat": 25.401, "lon": 68.342 }
+          ]
+        },
+        {
+          "id": "A3",
+          "name": "Mirpur Khas Detour",
+          "eta_minutes": 65,
+          "notes": "Longer inland detour; lower traffic",
+          "stops": [
+            { "place": "Karachi Depot", "lat": 24.783, "lon": 67.36 },
+            { "place": "Mirpur Khas", "lat": 25.525, "lon": 69.015 },
+            { "place": "Liaquat Hospital, Jamshoro", "lat": 25.428, "lon": 68.278 }
+          ]
+        },
+        {
+          "id": "A4",
+          "name": "N-5 Service Road North",
+          "eta_minutes": 48,
+          "notes": "Shortest ETA but may still hit N-5 congestion",
+          "stops": [
+            { "place": "Karachi Depot", "lat": 24.783, "lon": 67.36 },
+            { "place": "Malir Service Rd", "lat": 24.902, "lon": 67.185 },
+            { "place": "Liaquat Hospital, Jamshoro", "lat": 25.428, "lon": 68.278 }
+          ]
+        }
+      ]
+    },
+    {
+      "shipment_id": "SHP-901",
+      "cargo_type": "Saline IVs",
+      "cargo_value_usd": 8000,
+      "max_idling_temp_threshold_celsius": 50,
+      "max_safe_idle_minutes": 180,
+      "current_status": "In Transit (On Time)",
+      "eta_minutes": 55,
+      "destination_contact": "admin@alliedhospital.pk",
+      "route_name": "M-3 Lahore → Faisalabad",
+      "route": [
+        { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
+        { "place": "Sheikhupura", "lat": 31.713, "lon": 73.985 },
+        { "place": "Allied Hospital, Faisalabad", "lat": 31.418, "lon": 73.079 }
+      ],
+      "alternative_routes": [
+        {
+          "id": "A1",
+          "name": "GT Road via Sheikhupura",
+          "eta_minutes": 62,
+          "notes": "Bypass M-3 toll congestion",
+          "stops": [
+            { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
+            { "place": "Muridke", "lat": 31.583, "lon": 74.262 },
+            { "place": "Faisalabad Ring Rd", "lat": 31.425, "lon": 73.095 }
+          ]
+        },
+        {
+          "id": "A2",
+          "name": "M-2 Link to M-4",
+          "eta_minutes": 70,
+          "notes": "Motorway loop; reliable in rain",
+          "stops": [
+            { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
+            { "place": "Kot Abdul Malik", "lat": 31.812, "lon": 74.142 },
+            { "place": "Allied Hospital, Faisalabad", "lat": 31.418, "lon": 73.079 }
+          ]
+        },
+        {
+          "id": "A3",
+          "name": "Lahore Ring Road South",
+          "eta_minutes": 58,
+          "notes": "Urban ring; avoid city centre jams",
+          "stops": [
+            { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
+            { "place": "Raiwind Rd", "lat": 31.392, "lon": 74.215 },
+            { "place": "Allied Hospital, Faisalabad", "lat": 31.418, "lon": 73.079 }
+          ]
+        },
+        {
+          "id": "A4",
+          "name": "Faisalabad Direct Service Rd",
+          "eta_minutes": 50,
+          "notes": "Fastest when M-3 clear",
+          "stops": [
+            { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
+            { "place": "Pindi Bhattian", "lat": 31.898, "lon": 73.503 },
+            { "place": "Allied Hospital, Faisalabad", "lat": 31.418, "lon": 73.079 }
+          ]
+        }
+      ]
+    },
+    {
+      "shipment_id": "SHP-915",
+      "cargo_type": "Blood Plasma (Ultra Critical)",
+      "cargo_value_usd": 120000,
+      "max_idling_temp_threshold_celsius": 35,
+      "max_safe_idle_minutes": 20,
+      "current_status": "In Transit (On Time)",
+      "eta_minutes": 18,
+      "destination_contact": "emergency@holyfamily.org.pk",
+      "route_name": "Murree Rd Islamabad → Rawalpindi",
+      "route": [
+        { "place": "I-9 Pharma Hub", "lat": 33.652, "lon": 73.042 },
+        { "place": "Faizabad", "lat": 33.663, "lon": 73.078 },
+        { "place": "Holy Family Hospital", "lat": 33.582, "lon": 73.041 }
+      ],
+      "alternative_routes": [
+        {
+          "id": "A1",
+          "name": "Islamabad Expressway",
+          "eta_minutes": 22,
+          "notes": "Avoid Murree Rd protests",
+          "stops": [
+            { "place": "I-9 Pharma Hub", "lat": 33.652, "lon": 73.042 },
+            { "place": "Peshawar Mor", "lat": 33.721, "lon": 73.055 },
+            { "place": "BioStorage Chaklala", "lat": 33.591, "lon": 73.101 }
+          ]
+        },
+        {
+          "id": "A2",
+          "name": "Srinagar Highway",
+          "eta_minutes": 20,
+          "notes": "Fast east-west link",
+          "stops": [
+            { "place": "I-9 Pharma Hub", "lat": 33.652, "lon": 73.042 },
+            { "place": "Srinagar Hwy", "lat": 33.698, "lon": 73.112 },
+            { "place": "Holy Family Hospital", "lat": 33.582, "lon": 73.041 }
+          ]
+        },
+        {
+          "id": "A3",
+          "name": "IJP Road Junction",
+          "eta_minutes": 24,
+          "notes": "Local streets; use if expressway closed",
+          "stops": [
+            { "place": "I-9 Pharma Hub", "lat": 33.652, "lon": 73.042 },
+            { "place": "IJP Road", "lat": 33.612, "lon": 73.089 },
+            { "place": "Holy Family Hospital", "lat": 33.582, "lon": 73.041 }
+          ]
+        },
+        {
+          "id": "A4",
+          "name": "GT Road via Rawat",
+          "eta_minutes": 28,
+          "notes": "Southern bypass of twin cities",
+          "stops": [
+            { "place": "I-9 Pharma Hub", "lat": 33.652, "lon": 73.042 },
+            { "place": "Rawat", "lat": 33.498, "lon": 73.198 },
+            { "place": "Holy Family Hospital", "lat": 33.582, "lon": 73.041 }
+          ]
+        }
+      ]
+    },
+    {
+      "shipment_id": "SHP-928",
+      "cargo_type": "COVID Vaccines (Cold Chain)",
+      "cargo_value_usd": 95000,
+      "max_idling_temp_threshold_celsius": 30,
+      "max_safe_idle_minutes": 35,
+      "current_status": "In Transit (On Time)",
+      "eta_minutes": 72,
+      "destination_contact": "pharmacy@bvh.org.pk",
+      "route_name": "N-5 Multan → Bahawalpur",
+      "route": [
+        { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
+        { "place": "Khanewal", "lat": 30.31, "lon": 71.932 },
+        { "place": "Bahawal Victoria Hospital", "lat": 29.394, "lon": 71.682 }
+      ],
+      "alternative_routes": [
+        {
+          "id": "A1",
+          "name": "Bahawalpur Ring Road",
+          "eta_minutes": 78,
+          "notes": "Skips N-5 south blockages",
+          "stops": [
+            { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
+            { "place": "Vehari Junction", "lat": 30.175, "lon": 71.512 },
+            { "place": "Bahawalpur Cold Hub", "lat": 29.412, "lon": 71.655 }
+          ]
+        },
+        {
+          "id": "A2",
+          "name": "Hasilpur Link Road",
+          "eta_minutes": 85,
+          "notes": "Rural link; low traffic",
+          "stops": [
+            { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
+            { "place": "Hasilpur", "lat": 29.692, "lon": 71.261 },
+            { "place": "Bahawal Victoria Hospital", "lat": 29.394, "lon": 71.682 }
+          ]
+        },
+        {
+          "id": "A3",
+          "name": "Lodhran Bypass",
+          "eta_minutes": 80,
+          "notes": "Inland detour east of N-5",
+          "stops": [
+            { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
+            { "place": "Lodhran", "lat": 29.54, "lon": 71.632 },
+            { "place": "Bahawal Victoria Hospital", "lat": 29.394, "lon": 71.682 }
+          ]
+        },
+        {
+          "id": "A4",
+          "name": "Ahmedpur East Service Rd",
+          "eta_minutes": 74,
+          "notes": "Parallel to N-5; check flood reports",
+          "stops": [
+            { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
+            { "place": "Ahmedpur East", "lat": 29.142, "lon": 71.257 },
+            { "place": "Bahawal Victoria Hospital", "lat": 29.394, "lon": 71.682 }
+          ]
+        }
+      ]
+    }
+  ]
+}

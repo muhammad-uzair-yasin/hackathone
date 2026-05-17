@@ -1,167 +1,134 @@
 """
 agent.py — Main Deep Agent definition using LangChain Deep Agents SDK.
-
-Architecture:
-  - 1 Main Orchestrator (create_deep_agent)
-  - 3 Specialized Subagents with structured Pydantic response_format
-  - Full middleware stack: retry, fallback, summarization, todo planning
-  - CompositeBackend: StateBackend (session scratch) + FilesystemBackend (data files)
-
-Why this design:
-  - Subagents with response_format guarantee clean JSON between steps (no parsing failures)
-  - ToolRetryMiddleware + ModelRetryMiddleware handle OpenAI rate limits automatically
-  - ModelFallbackMiddleware switches to gpt-4o-mini if gpt-4o is unavailable
-  - SummarizationMiddleware keeps context lean for long runs
-  - FilesystemBackend gives agent direct read_file access to active_shipments.json
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from .llm import claude_fast
+
 from deepagents import create_deep_agent
-from deepagents.backends import CompositeBackend, StateBackend, FilesystemBackend
+from deepagents.backends import CompositeBackend, FilesystemBackend, StateBackend
+from langchain.agents.middleware import ModelRetryMiddleware, ToolRetryMiddleware
 
+from langchain_agent.schemas import (
+    ActionPlan,
+    FleetScoutOutput,
+    HazardExtraction,
+    ImpactAnalysis,
+)
+from langchain_agent.tools import notify_tool, update_crm_tool, write_summary_tool
+from .llm import claude_fast
 
-from langchain_agent.schemas import HazardExtraction, ImpactAnalysis, ActionPlan
-from langchain_agent.tools import update_crm_tool, notify_tool, write_state_log_tool
-
-# ─── Paths ───────────────────────────────────────────────────────────────────
 DATA_DIR = Path(__file__).parent / "data"
 
 # ─── Subagent System Prompts ─────────────────────────────────────────────────
 
 EXTRACTOR_PROMPT = """\
-You are the Hazard Extractor Agent for BioRoute Cold-Chain Logistics.
+You are the Hazard Extractor for BioRoute Cold-Chain Logistics.
 
-YOUR ONLY JOB: Read unstructured or semi-structured text (news articles, weather
-alerts, traffic reports, social media posts) and extract ONLY the operational
-hazard data relevant to road logistics. Do NOT write a generic summary of the text.
+## Your job
+Read ONLY the raw alert text in the task message. Extract measurable facts.
 
-## What you must extract:
-1. Whether a hazard is actually present (vs. routine news)
-2. The exact location (district name, highway number, intersection)
-3. The type of hazard (heatwave, traffic block, flooding, storm, road closure, fuel spike)
-4. The severity with measurable specifics (temperature in °C, delay in minutes/hours)
-5. Which specific routes or highways are blocked or affected
-6. How long the hazard is expected to last
+## OUTPUT — HazardExtraction JSON
+- display_summary: one sentence (max 120 chars) — what happened
+- why_brief: ≤15 words — why logistics teams should care
+- hazard_detected, location, affected_districts, hazard_type, severity_level
+- severity_details, affected_routes, temperature_celsius, estimated_duration_minutes
 
-## What you must NOT do:
-- Do NOT summarize the article generally
-- Do NOT include information unrelated to logistics (political news, sports, etc.)
-- Do NOT make assumptions — extract only what is explicitly stated or strongly implied
-- Do NOT output anything except the structured JSON
+## Rules
+- Facts only. Do NOT read files.
+- Use Pakistan routes: N-5, M-3, M-9, Murree Rd, Karachi, Hyderabad, Jamshoro, etc.
+- Never use "District 4", "Highway 9", or "Route 7".
+- Output ONLY valid JSON.
+"""
 
-## Input format:
-You will receive raw text that may be messy, informal, or incomplete.
-The text may be a news headline, a social media post, a weather advisory, or a
-mix of formats. Extract what you can; mark unknown fields as null.
+FLEET_SCOUT_PROMPT = """\
+You are the Fleet Scout for BioRoute Cold-Chain Logistics.
 
-## Output:
-Return ONLY a valid JSON object matching the HazardExtraction schema.
-Do not include markdown formatting, code blocks, or any text outside the JSON.
+## Your job
+Read /data/active_shipments.json. List every active shipment on the road.
 
-Example output:
-{
-  "hazard_detected": true,
-  "location": "District 4",
-  "hazard_type": "Heatwave",
-  "severity_level": "CRITICAL",
-  "severity_details": "42°C expected for next 3 hours, peak at 2:00 PM",
-  "affected_routes": ["Highway 9", "Highway 11"],
-  "temperature_celsius": 42.0,
-  "estimated_duration_minutes": 180,
-  "raw_summary": "Heatwave at 42°C and traffic block on Highway 9 in District 4."
-}
+## INPUT
+- Raw news/alert text in the task message (read for context only — do NOT extract hazard fields)
+
+## OUTPUT — FleetScoutOutput JSON
+- total_active: count of shipments
+- active_shipments: for each — shipment_id, route_name, cargo_type, eta_minutes, destination (last route stop)
+- display_summary: e.g. "4 trucks active: SHP-882 on N-5, SHP-901 on M-3, …"
+- why_brief: ≤15 words — e.g. "Must know who is moving before matching routes"
+
+## Rules
+- Read the CRM file once. Copy route_name and destinations exactly.
+- Do NOT decide who is affected — that is the next agent.
+- Output ONLY valid JSON.
 """
 
 ANALYZER_PROMPT = """\
-You are the Impact Analyzer Agent for BioRoute Cold-Chain Logistics.
+You are the Route Impact Analyzer for BioRoute Cold-Chain Logistics.
 
-YOUR ONLY JOB: Given an extracted hazard JSON and access to the live shipment
-database (active_shipments.json), determine WHICH active shipment is at risk and
-calculate the exact operational and financial impact.
+## Your job
+Read the rough news alert yourself. Decide which shipment(s) are affected and why.
 
-## Access to data:
-Use the read_file tool to read '/data/active_shipments.json' for live shipment data.
-Use the read_file tool to read '/data/business_context.md' for operational rules.
-Do NOT guess shipment details — always read the actual files.
+## INPUT (in task message)
+- RAW ALERT: full unstructured news text — YOU infer routes, temperature, delays from this
+- Optional FLEET LIST: summary from fleet-scout (shipment IDs and routes)
+- Read /data/active_shipments.json for cargo thresholds and alternative_routes (4 per shipment)
 
-## Critical Instructions for your Reasoning:
-- DO NOT copy-paste, echo, or recite the shipment database or the business rules in your reasoning.
-- The user cannot read giant blocks of JSON or markdown. Keep your reasoning brief.
-- Only output your step-by-step thinking about which shipment is at risk.
+## Do NOT use
+- Any pre-parsed "hazard JSON" or hazard-extractor output — think from the news directly
 
-## How to calculate impact:
-1. Find shipments whose primary_route OR destination district matches the hazard location.
-2. For each matching shipment, check: is the cargo temperature-sensitive?
-3. If temperature hazard: compare external temp vs. max_idling_temp_threshold_celsius.
-4. Calculate time_to_failure_minutes = max_safe_idle_minutes - estimated_current_idle_minutes.
-   (Assume current_idle_minutes = 0 unless stated; use max_safe_idle_minutes directly.)
-5. Calculate financial_consequence using the cargo_value_usd field.
-6. Set risk_level:
-   - CRITICAL: time_to_failure < 30 minutes OR ultra-critical cargo
-   - HIGH: time_to_failure 30-60 minutes
-   - MEDIUM: time_to_failure 60-120 minutes
-   - LOW: no immediate spoilage risk
+## OUTPUT — ImpactAnalysis JSON
+- impact_detected, affected_shipment_id, matched_shipment_ids, unaffected_shipment_ids
+- cargo_type, cargo_value_usd, criticality_tier, primary_route, destination
+- alternative_routes: copy all four {id, name, eta_minutes, notes} for affected shipment
+- backup_route / backup_facility: best candidate alternative name + last stop
+- time_to_failure_minutes, financial_consequence, medical_consequence, risk_level
+- requires_immediate_action, action_reason
+- display_summary: one sentence — ID, risk, time, money
+- why_brief: ≤15 words — e.g. "On blocked N-5; heat exceeds insulin limit"
 
-## Rules:
-- If multiple shipments are at risk, select the one with the highest risk (lowest time_to_failure).
-- If no shipment is at risk, set impact_detected = false.
-- Be precise with numbers — always show your calculation logic in operational_impact.
+## Matching
+From the news, infer blocked routes and places. Match against shipment route_name, route stops, and alternatives.
 
-## Output:
-Return ONLY a valid JSON object matching the ImpactAnalysis schema.
-Do not include markdown formatting or any text outside the JSON.
+## Rules
+- Name unaffected shipments in unaffected_shipment_ids.
+- Pick highest-risk shipment as affected_shipment_id.
+- Output ONLY valid JSON.
 """
 
 ACTION_PLANNER_PROMPT = """\
-You are the Action Planner Agent for BioRoute Cold-Chain Logistics.
+You are the Action Planner for BioRoute Cold-Chain Logistics.
 
-YOUR ONLY JOB: Given an impact analysis JSON, generate the precise action plan
-that the orchestrator needs to execute the emergency reroute.
+## Your job
+Read the rough news alert yourself. Pick the BEST of four alternative_routes for the affected shipment.
 
-## Access to data:
-Use the read_file tool to read '/data/business_context.md' for rerouting protocols.
-The impact analysis JSON you receive contains the backup_facility and backup_route
-fields — use those exact values in your database_update_payload.
+## INPUT (in task message)
+- RAW ALERT: full unstructured news text — YOU infer what is blocked and urgency
+- IMPACT: ImpactAnalysis JSON from route impact agent (shipment id, alternatives, risk)
+- Read /data/active_shipments.json if you need exact alternative route names
 
-## Critical Instructions for your Reasoning:
-- DO NOT copy-paste or echo the business rules in your reasoning. Keep it brief.
+## Do NOT use
+- Pre-parsed hazard JSON from hazard-extractor — reason from the news + impact only
 
-## Decision rules:
-- If risk_level is CRITICAL or HIGH AND requires_immediate_action is true:
-  → urgency = "IMMEDIATE", action = emergency reroute to backup_facility
-- If risk_level is MEDIUM:
-  → urgency = "SOON", consider reroute but include monitoring as alternative
-- If risk_level is LOW:
-  → urgency = "MONITOR", no reroute needed, just alert the driver
+## OUTPUT — ActionPlan JSON
+- selected_route_name, selected_alternative_id, selection_rationale (2–3 sentences for summary.md)
+- why_brief: ≤15 words — why A1 beat A2/A3/A4
+- display_summary: one sentence — action taken
+- database_simulation_payload: new_route (exact name), new_destination (last stop), new_status
+- notification_simulation, urgency, action_type
 
-## Notification requirements (from business context):
-The notification_draft MUST include ALL of these:
-  1. Shipment ID and cargo type
-  2. What hazard was detected and where
-  3. Why immediate action is required
-  4. New destination (if rerouting)
-  5. Estimated new ETA (say 'TBD - calculating' if unknown)
-  6. Emergency contact: BioRoute Control Center: +92-21-9876543
-
-Keep the tone professional but urgent. This goes to hospital administration.
-
-## Output:
-Return ONLY a valid JSON object matching the ActionPlan schema.
-Do not include markdown formatting or any text outside the JSON.
+## Rules
+- Reject alternatives that still use the blocked corridor.
+- Prefer cold-vault handoff for temperature-critical cargo in heat.
+- Output ONLY valid JSON.
 """
-
-# ─── Subagent Definitions ─────────────────────────────────────────────────────
 
 SUBAGENTS = [
     {
         "name": "hazard-extractor",
         "description": (
-            "Extracts structured hazard data from raw unstructured text such as news articles, "
-            "weather alerts, or traffic reports. Use this subagent FIRST, before any analysis. "
-            "It returns a JSON object with location, hazard type, severity, and affected routes."
+            "Step 1 — Reads raw news/alert text only. "
+            "Returns HazardExtraction (what happened + why_brief)."
         ),
         "model": claude_fast,
         "system_prompt": EXTRACTOR_PROMPT,
@@ -169,12 +136,21 @@ SUBAGENTS = [
         "response_format": HazardExtraction,
     },
     {
+        "name": "fleet-scout",
+        "description": (
+            "Step 2 — Reads active_shipments.json. "
+            "Returns FleetScoutOutput (who is on the road)."
+        ),
+        "model": claude_fast,
+        "system_prompt": FLEET_SCOUT_PROMPT,
+        "tools": [],
+        "response_format": FleetScoutOutput,
+    },
+    {
         "name": "impact-analyzer",
         "description": (
-            "Analyzes the real-world impact of an extracted hazard on active BioRoute shipments. "
-            "Reads the live shipment database and business rules, then calculates which shipment "
-            "is at risk, time to cargo failure, and financial consequence. "
-            "Use this subagent SECOND, after hazard-extractor has returned results."
+            "Step 3 — Reads raw news + CRM; decides who is hit. "
+            "Returns ImpactAnalysis (who is hit + why_brief)."
         ),
         "model": claude_fast,
         "system_prompt": ANALYZER_PROMPT,
@@ -184,10 +160,8 @@ SUBAGENTS = [
     {
         "name": "action-planner",
         "description": (
-            "Generates the exact action plan for an emergency reroute: the database update payload "
-            "(new status, destination, route) and the full notification draft for the hospital admin. "
-            "Use this subagent THIRD, after impact-analyzer has returned results. "
-            "This subagent produces the exact inputs needed for update_crm_tool and notify_tool."
+            "Step 4 — Picks best of 4 alternative routes. "
+            "Returns ActionPlan with CRM payload."
         ),
         "model": claude_fast,
         "system_prompt": ACTION_PLANNER_PROMPT,
@@ -196,140 +170,83 @@ SUBAGENTS = [
     },
 ]
 
-# ─── Orchestrator System Prompt ───────────────────────────────────────────────
-
 ORCHESTRATOR_SYSTEM_PROMPT = """\
-You are the BioRoute Cold-Chain Emergency Orchestrator — an autonomous AI system
-that protects temperature-sensitive medical cargo from environmental hazards.
+You are the BioRoute Emergency Orchestrator. You coordinate real specialist agents — never skip steps.
 
-## Narration rule — CRITICAL
-Before EVERY action you take, output a short 1-2 sentence message explaining
-what you are about to do and WHY. This commentary streams live to operators
-watching a dashboard. Be specific and human — not generic.
+## Coordinator voice (you only)
+- Speak in short plain sentences (≤20 words). No markdown, no bold, no tables.
+- Maximum 5 coordinator messages for the whole run.
+- After each subagent: say what you learned in your own words, then what you call next.
+- Do NOT copy display_summary or why_brief from subagents verbatim.
+- Say "received the alert" at most once.
 
-Good examples:
-  "I've received a news alert mentioning District 4. Starting hazard extraction
-   to find out if any routes or temperatures are dangerous for our shipments."
+## Critical — what to pass into each task()
+Always keep the user's FULL RAW ALERT TEXT (the original news message).
+- NEVER paste hazard-extractor JSON into fleet-scout, impact-analyzer, or action-planner.
+- Those agents must read and think from the rough news themselves.
 
-  "The extractor found a 42°C heatwave on Highway 9. Delegating to the
-   impact analyzer to check if any active shipments use that route."
+## Mandatory workflow (in order)
+1. write_todos — list steps you will actually run
+2. task('hazard-extractor', paste FULL raw alert text only)
+3. If hazard_detected: task('fleet-scout', paste FULL raw alert text only)
+4. If hazard_detected: task('impact-analyzer', paste FULL raw alert text, then fleet-scout JSON — no hazard JSON)
+5. If impact_detected AND (requires_immediate_action OR risk_level HIGH/CRITICAL):
+   task('action-planner', paste FULL raw alert text + impact-analyzer JSON — no hazard JSON)
+6. If action urgency IMMEDIATE or SOON: update_crm_tool (updates route in fleet DB) then notify_tool
+7. write_summary_tool last — short plain-English summary (3–6 sentences) for summary.md:
+   what the alert said, what you found, what action you took (or all clear).
+   Pass hazard_data, fleet_data, impact_data, action_data, crm_update_result, notification_result as JSON strings.
 
-  "SHP-882 carries insulin on Highway 9 — it will spoil in 45 minutes.
-   Calling the action planner to generate the emergency reroute now."
+## If no hazard or no impact
+- Skip later agents. One coordinator line: all clear. Still call write_summary_tool with an all-clear summary.
 
-  "Action plan confirmed: rerouting SHP-882 to District 3 Cold-Vault.
-   Updating the CRM database now."
-
-  "CRM updated. Sending emergency notification to District 4 General Hospital."
-
-Bad examples (too generic, do NOT do this):
-  "Processing request..."   ← never say this
-  "Step 2 starting."        ← never say this
-
-## Mandatory workflow — follow in EXACT order:
-
-### Step 1: Narrate + Plan
-Say what you just received and what your plan is. Then call write_todos.
-IMPORTANT: Generate a simple, dynamically sized todo list of 1-liners. Only include the exact steps you actually need to take based on the situation. Name the subagent if you plan to use one. Do not hardcode to 5 steps, just list exactly what is needed.
-Example:
-[
-  "Extract hazard data using 'hazard-extractor' subagent",
-  "Check active shipments using 'impact-analyzer' subagent",
-  "Generate reroute using 'action-planner' subagent"
-]
-
-### Step 2: Narrate + Extract Hazard
-Explain what you are looking for in the text. Then delegate to 'hazard-extractor'.
-
-### Step 3: Narrate + Impact Check
-Report what the extractor found. Explain why you are (or are not) checking impact.
-Then delegate to 'impact-analyzer' if hazard_detected is true.
-
-### Step 4: Narrate + Action Plan
-Report what the impact analysis shows. Explain the urgency. Then delegate to
-'action-planner' if impact_detected is true.
-
-### Step 5: Narrate + Execute
-Explain what you are about to write to the database and why. Call update_crm_tool.
-Then explain the notification you are sending. Call notify_tool.
-Then call write_state_log_tool.
-
-### Step 6: Final Summary
-Give a clear, concise human-readable summary of the complete pipeline result.
-
-## Other rules:
-- ALWAYS delegate to subagents via task() — never do their work yourself.
-- ALWAYS call write_state_log_tool at the end.
-- If a subagent fails, say so plainly and continue.
-- Generate a session ID like 'REQ-HHMMSS' at the start.
+Session ID: REQ-HHMMSS (from current time).
 """
-
-# ─── Backend — CompositeBackend ───────────────────────────────────────────────
-# Routes:
-#   /data/   → FilesystemBackend → langchain_agent/data/ (real files agent can read/write)
-#   default  → StateBackend      → session-scoped scratch space
 
 backend = CompositeBackend(
     default=StateBackend(),
     routes={
         "/data/": FilesystemBackend(
             root_dir=str(DATA_DIR),
-            virtual_mode=True,   # blocks path traversal outside DATA_DIR
+            virtual_mode=True,
         ),
     },
 )
 
-from langchain.agents.middleware import ModelRetryMiddleware, ToolRetryMiddleware
-
-# ─── Middleware Stack ─────────────────────────────────────────────────────────
-
 MIDDLEWARE = [
-    # Retry model calls on rate limits / transient failures (exp backoff)
     ModelRetryMiddleware(
         max_retries=3,
         initial_delay=2.0,
         backoff_factor=2.0,
         max_delay=30.0,
     ),
-
-    # Retry tool calls on failures (handles flaky external state)
     ToolRetryMiddleware(
         max_retries=3,
         initial_delay=1.0,
         backoff_factor=2.0,
         max_delay=30.0,
         jitter=True,
-        on_failure="return_message",   # LLM handles failure gracefully
+        on_failure="return_message",
     ),
 ]
 
-# ─── Create the Agent ─────────────────────────────────────────────────────────
 
 def build_agent():
-    """
-    Build and return the BioRoute Deep Agent.
-
-    Called once at startup. Uses Pollinations AI (OpenAI-compatible)
-    via the claude_fast LLM defined in llm.py — no OPENAI_API_KEY needed.
-    """
-    agent = create_deep_agent(
+    return create_deep_agent(
         model=claude_fast,
         name="bioroute-orchestrator",
-        tools=[update_crm_tool, notify_tool, write_state_log_tool],
+        tools=[update_crm_tool, notify_tool, write_summary_tool],
         subagents=SUBAGENTS,
         system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
         middleware=MIDDLEWARE,
         backend=backend,
     )
 
-    return agent
 
-
-# Module-level singleton — built once, reused across all API requests
 _agent = None
 
+
 def get_agent():
-    """Return the singleton agent, building it on first call."""
     global _agent
     if _agent is None:
         _agent = build_agent()

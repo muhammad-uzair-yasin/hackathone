@@ -38,20 +38,19 @@ SCENARIOS = [
         "affects_shipment": "SHP-882",
         "expected_action": "Emergency Reroute",
         "text": """\
-🚨 DISTRICT 4 EMERGENCY ADVISORY — Issued 2:15 PM
+🚨 SINDH EMERGENCY ADVISORY — Jamshoro Corridor — Issued 2:15 PM
 
-WEATHER: Extreme heat warning in effect for District 4 and surrounding areas.
-Temperature currently 42°C, forecast to reach 44°C by 3:00 PM. Advisory
-in effect until 6:00 PM tonight.
+WEATHER: Extreme heat warning for Hyderabad and Jamshoro districts.
+Temperature currently 42°C, forecast to reach 44°C by 3:00 PM.
 
-TRAFFIC: Multi-vehicle collision on Highway 9 at Junction 4-B. ALL lanes
-blocked. Emergency services on scene. Traffic backed up 4km. Estimated
-clearance time: 2-3 hours. Avoid Highway 9 entirely.
+TRAFFIC: Multi-vehicle collision on N-5 National Highway near Hyderabad West
+Bypass. ALL lanes blocked toward Jamshoro. Traffic backed up 4km. Estimated
+clearance: 2–3 hours. Avoid N-5 between Hyderabad and Jamshoro.
 
-Motorists are advised to seek alternate routes via Route 7 or Inner Ring Road.
-The District Civil Defense Authority urges all citizens to stay indoors.
+Motorists advised to use M-9 Motorway via Thatta Bypass. Liaquat University
+Hospital deliveries may face delays.
 
-— District 4 Emergency Management Office
+— Sindh Highway Police & District Emergency Office
 """,
     },
     {
@@ -61,16 +60,14 @@ The District Civil Defense Authority urges all citizens to stay indoors.
         "affects_shipment": "SHP-882",
         "expected_action": "Emergency Reroute",
         "text": """\
-@District4News: 🌊 FLASH FLOOD WARNING!! Highway 9 completely submerged near
-District 4 entry point!! Water level rising fast. 3 trucks already stuck.
-Fire department deploying boats. DO NOT attempt to cross!! #District4Flood
-#EmergencyAlert
+@SindhTraffic: 🌊 FLASH FLOOD on N-5 near Gharo Checkpoint!! Road submerged
+toward Hyderabad. 3 trucks stuck. DO NOT cross Malir–Thatta section!!
 
-Retweeted by @BioRoute_Dispatch: Driver teams please check alternate routes.
-Highway 9 impassable. Use Route 7. Stay safe out there 🙏
+Retweeted by @BioRoute_Dispatch: Karachi→Jamshoro insulin runs — use M-9
+Thatta Bypass. N-5 impassable at Gharo. #KarachiLogistics
 
-Local weather station reading: 38mm rain in last 2 hours. More coming.
-Highway 9 expected to remain closed minimum 90 minutes.
+Rain: 38mm in 2 hours. N-5 closure expected minimum 90 minutes near
+Hyderabad West Bypass.
 """,
     },
     {
@@ -109,14 +106,12 @@ Officials expect the strike to continue through the weekend.
 ...and now for the traffic and weather update. It's 1:45 PM and here's
 what you need to know if you're on the roads right now.
 
-Highway 12 heading toward District 7 — AVOID IT. We've got heavy storm
-conditions with visibility near zero. Wind gusts reported at 85 km/h.
-A refrigerated logistics vehicle flipped over near the District 7 entrance.
-Emergency vehicles are responding. Highway 12 is completely shut down,
-no ETA on reopening.
+Murree Road toward Rawalpindi — AVOID IT. Heavy storm with visibility near
+zero. Wind gusts 85 km/h. A refrigerated truck flipped near Committee Chowk.
+Murree Road corridor completely shut down, no ETA on reopening.
 
-The Inner Ring Road is your best bet right now but expect 40-minute
-delays due to redirected traffic.
+Islamabad Expressway and GT Road are your best alternates — expect 40-minute
+delays due to redirected traffic toward Chaklala.
 
 Temperature drops accompanying the storm — currently 29°C and falling fast.
 Forecast says it'll drop another 8 degrees by nightfall.
@@ -180,24 +175,21 @@ also its hot today maybe 36 degrees? not as bad as yesterday but still
 DISTRICT EMERGENCY MANAGEMENT BULLETIN
 Date: 16 May 2026 | Time: 14:30 PKT | Priority: CRITICAL
 
-DUAL HAZARD ALERT — DISTRICT 4
+DUAL HAZARD ALERT — SINDH (Karachi–Hyderabad–Jamshoro corridor)
 
 HAZARD 1 — EXTREME HEAT:
-The Pakistan Meteorological Department has issued a RED LEVEL heat advisory
-for District 4. Current temperature: 41°C. Expected peak: 43°C at 15:30.
-Heat index with humidity: feels like 48°C. Stay indoors. Avoid exertion.
+Pakistan Meteorological Department RED advisory for Hyderabad and Jamshoro.
+Current temperature: 41°C. Expected peak: 43°C at 15:30. Heat index ~48°C.
 
 HAZARD 2 — INFRASTRUCTURE:
-Highway 9 is closed for emergency water main repairs following a pipe burst
-at KM 12.4. One-way diversion is in effect via Service Road 4A.
-Estimated repair completion: 18:00 PKT. Heavy vehicles (>5 tonnes) are
-prohibited from using the diversion route due to weight limits.
+N-5 National Highway closed near Hyderabad West Bypass (KM 12.4) after a
+water main burst. Diversion via service roads only. Repair ETA 18:00 PKT.
+Heavy trucks (>5 tonnes) cannot use the diversion.
 
-All logistics operators serving District 4 must coordinate with District
-Emergency Management at +92-21-4455667 before entering the district.
+Logistics operators on N-5 Karachi–Jamshoro must call Sindh Emergency
+Management +92-21-4455667 before entering the corridor.
 
-COMBINED RISK: Commercial refrigerated vehicles should not idle in
-District 4 under current conditions.
+COMBINED RISK: Refrigerated trucks should not idle on N-5 in this heat.
 """,
     },
     {
@@ -207,13 +199,13 @@ District 4 under current conditions.
         "affects_shipment": "SHP-882",
         "expected_action": "Emergency Reroute",
         "text": """\
-Breaking news District 4 mein bht bura accident hua hai Highway 9 par.
+Breaking news N-5 par Gharo ke qareeb bht bura accident hua hai.
 3 gaadiyaan crash ho gaye hain. Police aur rescue on the way.
 
-Highway 9 completely jam hai. Log 2 ghante se phanse hue hain.
+N-5 Karachi se Hyderabad tak completely jam hai. Log 2 ghante se phanse hue hain.
 Temperature bhi bohut zyada hai aaj — 41 degrees C.
 
-Alternative route Route 7 try karo. Thora longer hai lekin clear hai.
+Alternative M-9 Thatta Bypass try karo. Thora longer hai lekin clear hai.
 
 Drivers please apni dispatch ko inform karo immediately.
 Medical vehicles ko priority milegi agar aap emergency number call karo:

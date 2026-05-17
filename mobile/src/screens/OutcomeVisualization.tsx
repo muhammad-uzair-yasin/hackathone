@@ -1,7 +1,5 @@
 /**
- * Screen 3: Outcome Visualization
- * BioRoute Cold-Chain — Before / After toggle, protocol timeline, email preview
- * Matches Stitch design: Outcome Visualization
+ * Outcome — before/after from live agent run + summary.md. No mock defaults.
  */
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -14,14 +12,10 @@ import {
   Easing,
 } from 'react-native';
 import GlassCard from '../components/GlassCard';
+import ReasonMarkdownPanel from '../components/ReasonMarkdownPanel';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 
-interface Props {
-  beforeState?: ShipmentState;
-  afterState?: ShipmentState;
-}
-
-interface ShipmentState {
+export interface ShipmentState {
   shipmentId: string;
   cargo: string;
   route: string;
@@ -30,71 +24,44 @@ interface ShipmentState {
   temp: string;
 }
 
-const BEFORE: ShipmentState = {
-  shipmentId: 'SHP-882',
-  cargo: 'Insulin (Temp Critical)',
-  route: 'Highway 9',
-  destination: 'District 4 General Hospital',
-  status: 'In Transit (On Time)',
-  temp: '2.1°C → rising',
-};
-
-const AFTER: ShipmentState = {
-  shipmentId: 'SHP-882',
-  cargo: 'Insulin (Temp Critical)',
-  route: 'District 3 Bio-Corridor',
-  destination: 'District 3 Cold-Vault',
-  status: 'Emergency Reroute',
-  temp: '2.4°C → STABILIZED',
-};
-
-const TIMELINE = [
-  {
-    time: '14:02:41',
-    title: 'AI Engine Detection',
-    detail: 'Latent thermal drift detected via sensor fusion. Predicted failure: 8.2 mins.',
-  },
-  {
-    time: '14:02:41',
-    title: 'Node Notification',
-    detail: "St. Jude's Hospital notified of micro-reroute delay (+4 mins).",
-  },
-  {
-    time: '14:02:42',
-    title: 'Logistics Protocol Completed',
-    detail: 'Cold-chain custody successfully transferred to District 3 Hub.',
-  },
-];
+interface Props {
+  beforeState?: ShipmentState;
+  afterState?: ShipmentState;
+  pipelineComplete?: boolean;
+  summaryMarkdown?: string | null;
+  summaryFile?: string;
+  onRefreshSummary?: () => void;
+}
 
 export default function OutcomeVisualization({
-  beforeState = BEFORE,
-  afterState = AFTER,
+  beforeState,
+  afterState,
+  pipelineComplete,
+  summaryMarkdown,
+  summaryFile,
+  onRefreshSummary,
 }: Props) {
   const [activeView, setActiveView] = useState<'before' | 'after'>('after');
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
   const pingAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    // Success glow pulse
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
-        Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
-      ])
-    ).start();
+  const hasData = Boolean(beforeState || afterState);
+  const showAfter = Boolean(afterState);
 
-    // Ping dot
+  useEffect(() => {
+    if (!showAfter) return;
     Animated.loop(
       Animated.sequence([
         Animated.timing(pingAnim, { toValue: 2, duration: 800, useNativeDriver: true }),
         Animated.timing(pingAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
       ])
     ).start();
-  }, []);
+  }, [showAfter, pingAnim]);
 
   const toggleView = (view: 'before' | 'after') => {
+    if (view === 'after' && !afterState) return;
+    if (view === 'before' && !beforeState) return;
     Animated.sequence([
       Animated.parallel([
         Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
@@ -102,19 +69,55 @@ export default function OutcomeVisualization({
       ]),
       Animated.parallel([
         Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.timing(scaleAnim, { toValue: 1, duration: 400, useNativeDriver: true, easing: Easing.out(Easing.back(1.5)) }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.back(1.5)),
+        }),
       ]),
     ]).start();
     setActiveView(view);
   };
 
-  const current = activeView === 'before' ? beforeState : afterState;
-  const isBefore = activeView === 'before';
+  if (!hasData && !summaryMarkdown) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Outcome</Text>
+        <Text style={styles.subtitle}>Before / after fleet state from the agent run</Text>
+        <GlassCard style={styles.emptyCard}>
+          <Text style={styles.emptyIcon}>📊</Text>
+          <Text style={styles.emptyTitle}>No outcome yet</Text>
+          <Text style={styles.emptyBody}>
+            Run the agent from the News tab. After a reroute completes, before and after shipment
+            data appears here. Use Reset on News to clear and test again.
+          </Text>
+        </GlassCard>
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    );
+  }
 
-  const glowShadow = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.1, 0.35],
-  });
+  if (!hasData && summaryMarkdown) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Outcome</Text>
+        <Text style={styles.subtitle}>Why the route changed</Text>
+        <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} />
+        {onRefreshSummary ? (
+          <TouchableOpacity onPress={onRefreshSummary} style={styles.refreshBtn}>
+            <Text style={styles.refreshText}>↻ Reload run summary (summary.md)</Text>
+          </TouchableOpacity>
+        ) : null}
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    );
+  }
+
+  const current =
+    activeView === 'before' ? beforeState! : afterState || beforeState!;
+  const isBefore = activeView === 'before' || !afterState;
+  const shipmentLabel = current.shipmentId.replace('SHP-', '#');
 
   return (
     <ScrollView
@@ -122,163 +125,100 @@ export default function OutcomeVisualization({
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logoText}>BioRoute</Text>
-        <Text style={styles.bellIcon}>🔔</Text>
-      </View>
+      <Text style={styles.title}>Outcome</Text>
+      <Text style={styles.subtitle}>
+        {pipelineComplete ? 'Agent run complete' : 'Snapshot from last run'}
+      </Text>
 
-      {/* Toggle Buttons */}
+      {summaryMarkdown ? (
+        <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} defaultOpen />
+      ) : null}
+
       <View style={styles.toggleCenter}>
         <View style={styles.toggleContainer}>
           <TouchableOpacity
-            style={[styles.toggleBtn, isBefore && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, isBefore && styles.toggleBtnActive, !beforeState && styles.toggleBtnDisabled]}
             onPress={() => toggleView('before')}
+            disabled={!beforeState}
             activeOpacity={0.85}
           >
-            <Text style={[styles.toggleText, isBefore && styles.toggleTextActive]}>
-              Before Alert
-            </Text>
+            <Text style={[styles.toggleText, isBefore && styles.toggleTextActive]}>Before</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.toggleBtn, !isBefore && styles.toggleBtnActive]}
+            style={[
+              styles.toggleBtn,
+              !isBefore && styles.toggleBtnActive,
+              !afterState && styles.toggleBtnDisabled,
+            ]}
             onPress={() => toggleView('after')}
+            disabled={!afterState}
             activeOpacity={0.85}
           >
-            <Text style={[styles.toggleText, !isBefore && styles.toggleTextActive]}>
-              After AI Execution
-            </Text>
+            <Text style={[styles.toggleText, !isBefore && styles.toggleTextActive]}>After</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.outcomeTitle}>Shipment #882 Outcome</Text>
-        <Text style={styles.outcomeSubtitle}>Autonomous Intervention Analysis • Insulin Cold-Chain</Text>
+        <Text style={styles.outcomeTitle}>Shipment {shipmentLabel}</Text>
+        <Text style={styles.outcomeSubtitle}>{current.cargo}</Text>
       </View>
 
-      {/* Comparison Canvas */}
       <Animated.View
-        style={[
-          styles.canvasWrapper,
-          { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
-        ]}
+        style={[styles.canvasWrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
       >
-        {isBefore ? (
-          /* BEFORE VIEW */
-          <GlassCard style={[styles.canvas, { borderColor: `${Colors.error}30` }]}>
-            <View style={styles.canvasOverlay}>
-              <View style={[styles.statusChip, { backgroundColor: `${Colors.error}18` }]}>
-                <Text style={[styles.statusChipIcon, { color: Colors.error }]}>⚠️</Text>
-                <Text style={[styles.statusChipLabel, { color: Colors.error }]}>Critical Risk</Text>
-              </View>
-              <Text style={styles.canvasHeading}>Temperature trend UP</Text>
-              <Text style={styles.canvasDetail}>
-                Sensors detecting latent compressor failure in Van-12.
-              </Text>
+        <GlassCard
+          style={[
+            styles.canvas,
+            isBefore ? { borderColor: `${Colors.outlineVariant}55` } : { borderColor: `${Colors.primary}30` },
+          ]}
+        >
+          {isBefore ? (
+            <View style={styles.banner}>
+              <Text style={styles.bannerLabel}>Baseline (before agent)</Text>
             </View>
-
-            <View style={styles.stateGrid}>
-              <StateRow label="Shipment" value={current.shipmentId} />
-              <StateRow label="Cargo" value={current.cargo} />
-              <StateRow label="Route" value={current.route} icon="🛣️" />
-              <StateRow label="Destination" value={current.destination} />
-              <StateRow label="Status" value={current.status} valueColor="#16a34a" icon="🟢" />
-              <StateRow label="Temperature" value={current.temp} />
-            </View>
-          </GlassCard>
-        ) : (
-          /* AFTER VIEW */
-          <GlassCard style={[styles.canvas, styles.canvasAfter]}>
-            {/* Protected badge */}
-            <View style={styles.protectedHeader}>
-              <View style={styles.protectedBadge}>
-                <Text style={styles.protectedIcon}>🛡️</Text>
-                <Text style={styles.protectedLabel}>EMERGENCY PROTECTED</Text>
-              </View>
-              <View style={styles.coolingBox}>
-                <Text style={styles.coolingLabel}>COOLING SYSTEM</Text>
-                <Text style={styles.coolingValue}>
-                  2.4°C <Text style={styles.coolingStabilized}>STABILIZED</Text>
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.afterTitleRow}>
-              <Text style={styles.afterTitle}>Insulin #882</Text>
-              <View style={styles.protectedDotRow}>
+          ) : (
+            <View style={[styles.banner, styles.bannerAfter]}>
+              <Text style={styles.bannerLabelAfter}>After agent / route updated</Text>
+              {showAfter ? (
                 <Animated.View style={[styles.pingDot, { transform: [{ scale: pingAnim }] }]} />
-                <Text style={styles.protectedText}>PROTECTED</Text>
-              </View>
-              <Text style={styles.afterSubtitle}>District 3 Backup Active</Text>
+              ) : null}
             </View>
+          )}
 
-            <View style={styles.stateGrid}>
-              <StateRow label="Shipment" value={current.shipmentId} />
-              <StateRow label="Cargo" value={current.cargo} />
-              <StateRow label="New Route" value={current.route} icon="🔄" />
-              <StateRow label="New Destination" value={current.destination} icon="🏥" />
-              <StateRow label="Status" value={current.status} valueColor={Colors.error} icon="🔴" />
-              <StateRow label="Temperature" value={current.temp} valueColor={Colors.primary} />
-            </View>
+          <View style={styles.stateGrid}>
+            <StateRow label="Shipment" value={current.shipmentId} />
+            <StateRow label="Cargo" value={current.cargo} />
+            <StateRow label="Route" value={current.route} />
+            <StateRow label="Destination" value={current.destination} />
+            <StateRow
+              label="Status"
+              value={current.status}
+              valueColor={/reroute/i.test(current.status) ? Colors.error : '#16a34a'}
+            />
+            {current.temp !== '—' ? <StateRow label="Temperature" value={current.temp} /> : null}
+          </View>
 
-            {/* Reroute banner */}
+          {!isBefore && /reroute/i.test(current.status) ? (
             <View style={styles.rerouteBanner}>
-              <Text style={styles.rerouteIcon}>✨</Text>
+              <Text style={styles.rerouteIcon}>✓</Text>
               <View>
-                <Text style={styles.rerouteTitle}>Emergency Reroute Activated</Text>
-                <Text style={styles.rerouteDetail}>Intercepted by Bio-Drone Unit D-12 in 0.4s</Text>
+                <Text style={styles.rerouteTitle}>Emergency reroute applied</Text>
+                <Text style={styles.rerouteDetail}>Route updated by orchestrator</Text>
               </View>
             </View>
-          </GlassCard>
-        )}
+          ) : null}
+        </GlassCard>
       </Animated.View>
 
-      {/* Protocol Timeline */}
-      <GlassCard variant="neumorphic" style={styles.timelineCard}>
-        <View style={styles.timelineHeader}>
-          <Text style={styles.timelineLabel}>PROTOCOL TIMELINE</Text>
-          <Text style={styles.compliantBadge}>100% COMPLIANT</Text>
-        </View>
-        {TIMELINE.map((item, i) => (
-          <View key={i} style={styles.timelineItem}>
-            <View style={styles.timelineDotCol}>
-              <View style={styles.timelineDot} />
-              {i < TIMELINE.length - 1 && <View style={styles.timelineLine} />}
-            </View>
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineTime}>{item.time} • {item.title}</Text>
-              <Text style={styles.timelineDetail}>{item.detail}</Text>
-            </View>
-          </View>
-        ))}
-      </GlassCard>
-
-      {/* AI Automated Email */}
-      <GlassCard variant="inset" style={styles.emailCard}>
-        <View style={styles.emailHeader}>
-          <View style={styles.emailIconRow}>
-            <Text style={{ fontSize: 18 }}>✉️</Text>
-            <Text style={styles.emailTitle}>AI Automated Report</Text>
-          </View>
-          <Text style={styles.emailSent}>SENT 14:03</Text>
-        </View>
-        <Text style={styles.emailTo}>To: Dr. Sarah Chen (Chief Pharmacist)</Text>
-        <View style={styles.emailDivider} />
-        <Text style={styles.emailBody}>
-          "Notice: Autonomous intervention for Shipment #882 was successful.
-          Thermal integrity maintained at 2.4°C. Routing was adjusted through
-          District 3 due to upstream hardware anomaly. Estimated arrival: 14:45."
+      {!afterState ? (
+        <Text style={styles.waitingAfter}>
+          “After” view appears when the agent updates the route or finishes analysis.
         </Text>
-        <TouchableOpacity style={styles.viewLogsBtn}>
-          <Text style={styles.viewLogsText}>View Full Logs →</Text>
-        </TouchableOpacity>
-      </GlassCard>
+      ) : null}
 
-      {/* Acknowledge CTA */}
-      <View style={styles.ctaSection}>
-        <TouchableOpacity style={styles.ackBtn} activeOpacity={0.85}>
-          <Text style={styles.ackBtnText}>✅  Acknowledge AI Action</Text>
+      {!summaryMarkdown && onRefreshSummary ? (
+        <TouchableOpacity onPress={onRefreshSummary} style={styles.refreshBtn}>
+          <Text style={styles.refreshText}>Load run summary (summary.md)</Text>
         </TouchableOpacity>
-        <Text style={styles.protocolRef}>Logged under Protocol: BIO-AUT-X4</Text>
-      </View>
+      ) : null}
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -289,161 +229,96 @@ function StateRow({
   label,
   value,
   valueColor,
-  icon,
 }: {
   label: string;
   value: string;
   valueColor?: string;
-  icon?: string;
 }) {
   return (
     <View style={styles.stateRow}>
       <Text style={styles.stateLabel}>{label}</Text>
-      <View style={styles.stateValueRow}>
-        {icon && <Text style={{ fontSize: 14, marginRight: 4 }}>{icon}</Text>}
-        <Text style={[styles.stateValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
-      </View>
+      <Text style={[styles.stateValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: Spacing.lg },
+  content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
 
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingTop: Spacing.xl, paddingBottom: Spacing.md,
-  },
-  logoText: { ...Typography.headlineSM, color: Colors.primary, fontWeight: '700' },
-  bellIcon: { fontSize: 22 },
+  title: { ...Typography.headlineMD, color: Colors.onSurface },
+  subtitle: { ...Typography.bodySM, color: Colors.onSurfaceVariant, marginBottom: Spacing.lg },
 
-  // Toggle
+  emptyCard: { padding: Spacing.xl, alignItems: 'center' },
+  emptyIcon: { fontSize: 40, marginBottom: Spacing.md },
+  emptyTitle: { ...Typography.bodyMD, fontWeight: '700', color: Colors.onSurface, marginBottom: Spacing.sm },
+  emptyBody: { ...Typography.bodySM, color: Colors.onSurfaceVariant, textAlign: 'center', lineHeight: 20 },
+
   toggleCenter: { alignItems: 'center', marginBottom: Spacing.lg },
   toggleContainer: {
-    flexDirection: 'row', padding: 6,
-    backgroundColor: Colors.glassBackground,
+    flexDirection: 'row',
+    padding: 4,
+    backgroundColor: Colors.surfaceContainerLow,
     borderRadius: BorderRadius.md,
-    borderWidth: 1, borderColor: Colors.glassBorder,
-    shadowColor: '#d1d9e6', shadowOffset: { width: 6, height: 6 }, shadowOpacity: 0.8, shadowRadius: 10,
-    elevation: 4,
     marginBottom: Spacing.md,
   },
-  toggleBtn: {
-    paddingHorizontal: 20, paddingVertical: 10,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.surfaceContainer,
-  },
-  toggleBtnActive: {
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
+  toggleBtn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: BorderRadius.sm },
+  toggleBtnActive: { backgroundColor: Colors.primary },
+  toggleBtnDisabled: { opacity: 0.4 },
   toggleText: { ...Typography.labelMD, color: Colors.onSurfaceVariant },
   toggleTextActive: { color: Colors.onPrimary },
-  outcomeTitle: { ...Typography.headlineMD, color: Colors.onBackground, textAlign: 'center' },
-  outcomeSubtitle: { ...Typography.bodySM, color: Colors.onSurfaceVariant, textAlign: 'center', marginTop: 2 },
+  outcomeTitle: { ...Typography.headlineSM, color: Colors.onSurface, textAlign: 'center' },
+  outcomeSubtitle: { ...Typography.bodySM, color: Colors.onSurfaceVariant, textAlign: 'center' },
 
-  // Canvas
-  canvasWrapper: { marginBottom: Spacing.lg },
-  canvas: {
-    padding: Spacing.lg, minHeight: 300,
-    borderWidth: 1, borderColor: 'transparent',
-  },
-  canvasAfter: {
-    borderColor: `${Colors.primary}20`,
-  },
-  canvasOverlay: { marginBottom: Spacing.lg },
-  statusChip: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginBottom: Spacing.xs },
-  statusChipIcon: { fontSize: 14 },
-  statusChipLabel: { ...Typography.labelSM, textTransform: 'uppercase', letterSpacing: 1 },
-  canvasHeading: { ...Typography.bodyMD, fontWeight: '700', color: Colors.onSurface, marginBottom: 4 },
-  canvasDetail: { ...Typography.bodySM, color: Colors.onSurfaceVariant },
-
-  // After header
-  protectedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.md },
-  protectedBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.glassBackground,
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: BorderRadius.sm,
-    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4,
-  },
-  protectedIcon: { fontSize: 16 },
-  protectedLabel: { ...Typography.labelSM, color: Colors.primary, letterSpacing: 1 },
-  coolingBox: { alignItems: 'flex-end' },
-  coolingLabel: { ...Typography.labelSM, color: Colors.onSurfaceVariant },
-  coolingValue: { ...Typography.headlineSM, color: Colors.primary },
-  coolingStabilized: { ...Typography.bodySM, color: Colors.onSurfaceVariant, fontWeight: '400' },
-  afterTitleRow: { marginBottom: Spacing.md },
-  afterTitle: { ...Typography.headlineSM, color: Colors.onSurface },
-  protectedDotRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: `${Colors.primary}18`,
+  canvasWrapper: { marginBottom: Spacing.md },
+  canvas: { padding: Spacing.lg, borderWidth: 1 },
+  banner: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-    marginTop: Spacing.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: Colors.surfaceContainerLow,
+    marginBottom: Spacing.md,
   },
+  bannerAfter: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: `${Colors.primary}15` },
+  bannerLabel: { ...Typography.labelSM, color: Colors.outline },
+  bannerLabelAfter: { ...Typography.labelSM, color: Colors.primary, fontWeight: '700' },
   pingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary },
-  protectedText: { ...Typography.labelSM, color: Colors.primary, fontWeight: '700' },
-  afterSubtitle: { ...Typography.bodySM, color: Colors.onSurfaceVariant, marginTop: Spacing.xs },
 
-  // State grid
-  stateGrid: { gap: Spacing.xs, marginBottom: Spacing.md },
-  stateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: `${Colors.outlineVariant}22` },
-  stateLabel: { ...Typography.labelMD, color: Colors.outline },
-  stateValueRow: { flexDirection: 'row', alignItems: 'center' },
-  stateValue: { ...Typography.bodySM, color: Colors.onSurface, fontWeight: '600' },
-
-  // Reroute banner
-  rerouteBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: `${Colors.primary}10`,
-    padding: Spacing.md, borderRadius: BorderRadius.sm,
+  stateGrid: { gap: Spacing.xs },
+  stateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: `${Colors.outlineVariant}33`,
   },
-  rerouteIcon: { fontSize: 24 },
+  stateLabel: { ...Typography.labelMD, color: Colors.outline },
+  stateValue: { ...Typography.bodySM, color: Colors.onSurface, fontWeight: '600', flex: 1, textAlign: 'right' },
+
+  rerouteBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: `${Colors.primary}10`,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    marginTop: Spacing.md,
+  },
+  rerouteIcon: { fontSize: 20, color: Colors.primary },
   rerouteTitle: { ...Typography.labelMD, color: Colors.primary },
   rerouteDetail: { ...Typography.bodySM, color: Colors.onSurfaceVariant },
-
-  // Timeline
-  timelineCard: { padding: Spacing.lg, marginBottom: Spacing.md },
-  timelineHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
-  timelineLabel: { ...Typography.labelMD, color: Colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: 1.5 },
-  compliantBadge: { ...Typography.labelSM, color: Colors.primary, fontWeight: '700' },
-  timelineItem: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
-  timelineDotCol: { alignItems: 'center' },
-  timelineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary, marginTop: 4 },
-  timelineLine: { width: 2, flex: 1, backgroundColor: `${Colors.outlineVariant}40`, marginTop: 4 },
-  timelineContent: { flex: 1, paddingBottom: Spacing.sm },
-  timelineTime: { ...Typography.labelMD, color: Colors.onSurface, fontWeight: '700', marginBottom: 2 },
-  timelineDetail: { ...Typography.bodySM, color: Colors.onSurfaceVariant },
-
-  // Email
-  emailCard: {
-    padding: Spacing.lg, marginBottom: Spacing.lg,
-    borderWidth: 1, borderColor: `${Colors.white}66`,
+  waitingAfter: {
+    ...Typography.bodySM,
+    color: Colors.outline,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: Spacing.lg,
   },
-  emailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
-  emailIconRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  emailTitle: { ...Typography.labelMD, fontWeight: '700', color: Colors.onSurface },
-  emailSent: { ...Typography.labelSM, color: Colors.onSurfaceVariant },
-  emailTo: { ...Typography.bodySM, fontWeight: '700', color: Colors.onSurface, marginBottom: Spacing.sm },
-  emailDivider: { height: 1, backgroundColor: `${Colors.outlineVariant}33`, marginBottom: Spacing.sm },
-  emailBody: { ...Typography.bodySM, color: Colors.onSurfaceVariant, fontStyle: 'italic', lineHeight: 22, marginBottom: Spacing.lg },
-  viewLogsBtn: { alignSelf: 'flex-end' },
-  viewLogsText: { ...Typography.labelMD, color: Colors.primary, fontWeight: '700' },
-
-  // CTA
-  ctaSection: { alignItems: 'center', paddingVertical: Spacing.lg },
-  ackBtn: {
-    width: '100%', height: 56, borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
+  refreshBtn: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.md,
   },
-  ackBtnText: { ...Typography.bodyMD, color: Colors.onPrimary, fontWeight: '700' },
-  protocolRef: { ...Typography.labelSM, color: Colors.onSurfaceVariant, opacity: 0.7, marginTop: Spacing.sm },
+  refreshText: { ...Typography.labelMD, color: Colors.primary },
 });

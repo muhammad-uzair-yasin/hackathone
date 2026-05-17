@@ -1,0 +1,318 @@
+/* BioRoute — supplements Tailwind */
+
+/* Leaflet — Pakistan fleet map */
+.fleet-rail-btn.ring-2 {
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.5);
+}
+
+#fleet-map-container {
+  height: min(42vh, 380px);
+  min-height: 260px;
+  width: 100%;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: #0c0c0e;
+  z-index: 0;
+}
+
+#fleet-map-container .leaflet-container {
+  height: 100%;
+  width: 100%;
+  font-family: Inter, system-ui, sans-serif;
+  background: #18181b;
+}
+
+.fleet-marker span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.fleet-line-tip {
+  background: rgba(24, 24, 27, 0.95) !important;
+  border: 1px solid rgba(139, 92, 246, 0.4) !important;
+  color: #e4e4e7 !important;
+  font-size: 11px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.route-panel {
+  background-image:
+    linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.waypoint-line-bar {
+  position: absolute;
+  top: 1.125rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  height: 4px;
+  border-radius: 9999px;
+  z-index: 0;
+}
+
+.route-panel .space-y-4 > article {
+  overflow-x: auto;
+}
+
+.route-panel article .relative.w-full {
+  min-width: 280px;
+}
+
+.waypoint-line-bar.active {
+  background: linear-gradient(90deg, #7c3aed, #6366f1);
+}
+
+.waypoint-line-bar.original {
+  background: repeating-linear-gradient(
+    90deg,
+    #52525b 0,
+    #52525b 8px,
+    transparent 8px,
+    transparent 14px
+  );
+  opacity: 0.85;
+}
+
+.waypoint-line-bar.hazard {
+  background: #ef4444;
+  opacity: 0.45;
+  animation: hazard-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hazard-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.65; }
+}
+
+#status-badge.active #status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
+}
+
+#start-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Breaking news slide-over */
+.news-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.news-panel-backdrop.hidden,
+.news-panel.hidden {
+  display: none;
+}
+
+.news-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 420px);
+  max-width: 100%;
+  height: 100%;
+  background: #18181b;
+  border-left: 1px solid rgba(59, 130, 246, 0.25);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
+  animation: news-slide-in 0.25s ease;
+}
+
+@keyframes news-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.news-scenario-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(63, 63, 70, 0.8);
+  background: rgba(39, 39, 42, 0.6);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.news-scenario-btn:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.news-scenario-btn.is-active {
+  border-color: rgba(59, 130, 246, 0.6);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+#btn-view-news.ring-2 {
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.45);
+}
+
+/* Mobile: hide verbose trace; judges use reasoning accordion */
+@media (max-width: 1023px) {
+  .event-card.trace-verbose {
+    display: none;
+  }
+}
+
+/* Judge reasoning — GPT-style collapsible steps */
+#judge-reasoning-panel.is-visible {
+  display: block;
+}
+
+#judge-status-strip.is-visible {
+  display: block;
+}
+
+.judge-reasoning-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.judge-reasoning-header:hover {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.judge-reasoning-chevron {
+  transition: transform 0.2s ease;
+  color: #a1a1aa;
+  font-size: 0.65rem;
+}
+
+.judge-reasoning-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.judge-reasoning-body {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+
+.judge-reasoning-body.is-open {
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+
+.judge-step {
+  border-top: 1px solid rgba(63, 63, 70, 0.5);
+}
+
+.judge-step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+}
+
+.judge-step-header:hover {
+  background: rgba(39, 39, 42, 0.6);
+}
+
+.judge-step-num {
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  border: 1px solid #52525b;
+  color: #a1a1aa;
+}
+
+.judge-step.is-pending .judge-step-num {
+  border-color: #52525b;
+  color: #71717a;
+}
+
+.judge-step.is-active .judge-step-num {
+  background: #7c3aed;
+  border-color: #a78bfa;
+  color: #fff;
+}
+
+.judge-step.is-done .judge-step-num {
+  background: #059669;
+  border-color: #34d399;
+  color: #fff;
+}
+
+.judge-step-preview {
+  font-size: 0.75rem;
+  color: #d4d4d8;
+  line-height: 1.35;
+  flex: 1;
+  min-width: 0;
+}
+
+.judge-step.is-pending .judge-step-preview {
+  color: #71717a;
+}
+
+.judge-step-detail {
+  display: none;
+  padding: 0 1rem 0.75rem 2.5rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.judge-step.is-expanded .judge-step-detail {
+  display: block;
+}
+
+.judge-step-detail .why {
+  color: #a78bfa;
+  margin-top: 0.35rem;
+}
+
+.judge-step-detail .extra {
+  color: #71717a;
+  margin-top: 0.35rem;
+  font-size: 0.6875rem;
+}
+
+.event-card {
+  animation: slide-up 0.4s ease forwards;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}

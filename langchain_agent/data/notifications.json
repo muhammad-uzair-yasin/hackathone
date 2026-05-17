@@ -1,108 +1,20 @@
 {
   "notifications": [
     {
-      "notification_id": "NOTIF-SHP-882-184451",
-      "timestamp": "2026-05-16T13:44:51.828367+00:00",
+      "notification_id": "NOTIF-SHP-882-161707",
+      "timestamp": "2026-05-17T11:17:07.988531+00:00",
       "shipment_id": "SHP-882",
-      "recipient": "District 4 General Hospital Administration",
+      "recipient": "BioRoute Driver SHP-882",
       "urgency_level": "IMMEDIATE",
       "status": "SENT (simulated)",
       "channels": [
         "email",
         "sms"
       ],
-      "message": "EMERGENCY NOTIFICATION - SHIPMENT REROUTE\n\nShipment ID: SHP-882\nCargo: Critical Insulin Supply\nStatus: REROUTED (Emergency)\n\nREASON FOR REROUTE:\nFlash flood on Highway 9 at District 4 entry point has completely closed the primary route. Road is completely submerged with water level rising rapidly. Minimum 90-minute closure forecast. Three vehicles already trapped. Your delivery truck was 35 minutes from this hazard zone.\n\nCURRENT ACTION TAKEN:\n- Shipment immediately rerouted via Route 7 (District 3 bypass)\n- New destination: District 3 Cold-Vault (temperature-controlled facility, compatible cold chain)\n- Truck will offload insulin at District 3 Cold-Vault for secure transfer to your facility once Highway 9 reopens or alternative delivery route is arranged\n\nNEW ETA:\nEstimated arrival at District 3 Cold-Vault: 45 minutes\nEstimated transfer completion to District 4 General Hospital: 120 minutes from this notification\n\nNEXT STEPS REQUIRED:\n1. Notify receiving ward that insulin will arrive via District 3 Cold-Vault temporary holding\n2. Prepare to receive transfer shipment once Highway 9 reopens or standby for alternate delivery coordination\n3. Contact BioRoute Dispatch (reference SHP-882) for real-time status updates\n\nYour cargo remains in cold chain compliance throughout reroute. We are actively monitoring Highway 9 closure status.\n\nUrgency Level: IMMEDIATE\nAuthorized by: BioRoute Emergency Orchestration System"
-    },
-    {
-      "notification_id": "NOTIF-SHP-901-185134",
-      "timestamp": "2026-05-16T13:51:34.019604+00:00",
-      "shipment_id": "SHP-901",
-      "recipient": "District 1 Clinic Administration",
-      "urgency_level": "HIGH",
-      "status": "SENT (simulated)",
-      "channels": [
-        "email",
-        "sms"
-      ],
-      "message": "BIOROUTE COLD-CHAIN LOGISTICS \u2014 SHIPMENT UPDATE\n\nShipment ID: SHP-901\nCargo Type: Saline IVs (8,000 USD)\nDestination: District 1 Clinic\n\nSITUATION:\nRoute 66, the primary delivery route to your facility, is closed from 11 AM to 5 PM due to VIP visit and police security operations. To ensure timely and safe delivery of your shipment, we have proactively authorized a reroute via our alternate corridor.\n\nACTION TAKEN:\nYour Saline IV shipment is now being diverted via Route 66 Alt (via District 1 Hub checkpoint) with an estimated additional delay of 45 minutes. Cargo temperature tolerance for Saline IVs is 180 minutes at ambient conditions \u2014 we maintain an 80-minute safety margin. No spoilage risk.\n\nREVISED DELIVERY DETAILS:\n- New Route: Route 66 Alt\n- Original ETA: 55 minutes\n- Revised ETA: Approximately 100 minutes from this notification\n- Cargo Status: Secure, Within Safe Temperature Range\n- Current Ambient: 36\u00b0C (well within limits)\n\nCONFIRMATION:\nWe are proceeding with this proactive reroute to avoid the Route 66 closure and ensure continuity of your operations. Your clinical staff should expect delivery by the revised ETA.\n\nIf you have questions or require an update, contact:\nBioRoute Control Center: +92-21-9876543 (Available 24/7)"
-    },
-    {
-      "notification_id": "NOTIF-SHP-882-185856",
-      "timestamp": "2026-05-16T13:58:56.421558+00:00",
-      "shipment_id": "SHP-882",
-      "recipient": "District 4 General Hospital Administration",
-      "urgency_level": "IMMEDIATE",
-      "status": "SENT (simulated)",
-      "channels": [
-        "email",
-        "sms"
-      ],
-      "message": "URGENT REROUTE NOTIFICATION\n\nShipment ID: SHP-882\nCargo Type: Insulin (Temperature Critical)\nCurrent Status: In Transit - EMERGENCY REROUTE IN EFFECT\n\nSITUATION:\nHighway 9 at Junction 4-B is blocked by a multi-vehicle collision. Clearance is estimated at 2\u20133 hours. Given current external temperatures of 42\u00b0C (rising to 44\u00b0C by 3:00 PM), your insulin shipment cannot remain idle on this route. Insulin becomes non-viable after 45 minutes of idling in temperatures above 38\u00b0C.\n\nIMMEDIATE ACTION TAKEN:\nYour shipment (SHP-882) is being immediately rerouted via Route 7 to District 3 Cold-Vault for emergency holding. This facility maintains BioRoute-standard ultra-cold storage and will preserve cargo integrity until Highway 9 is cleared and safe transfer to District 4 General Hospital can proceed.\n\nNEW DESTINATION: District 3 Cold-Vault\nESTIMATED ARRIVAL AT COLD-VAULT: TBD - calculating (Route 7 is traffic-dependent)\nNEXT STEPS: Once Highway 9 is cleared (estimated 2\u20133 hours), insulin will be transferred directly from District 3 Cold-Vault to District 4 General Hospital. Total delay to final delivery: approximately 1\u20132 hours.\n\nWHAT YOU NEED TO DO:\n1. Acknowledge receipt of this notification\n2. Prepare to receive shipment transfer from District 3 Cold-Vault once Highway 9 is clear\n3. Contact BioRoute Control Center immediately if you have questions\n\nEMERGENCY CONTACT:\nBioRoute Control Center: +92-21-9876543\nDistrict 3 Cold-Vault (temporary facility): +92-21-3344556\n\nWe are prioritizing zero spoilage and will keep you updated every 15 minutes until final delivery.\n\nThank you for your trust in BioRoute Cold-Chain Logistics."
-    },
-    {
-      "notification_id": "NOTIF-SHP-882-190616",
-      "timestamp": "2026-05-16T14:06:16.556208+00:00",
-      "shipment_id": "SHP-882",
-      "recipient": "District 4 General Hospital Administration",
-      "urgency_level": "IMMEDIATE",
-      "status": "SENT (simulated)",
-      "channels": [
-        "email",
-        "sms"
-      ],
-      "message": "URGENT SHIPMENT REROUTE NOTIFICATION\n\nShipment ID: SHP-882\nCargo Type: Insulin (Temperature Critical, $50,000 value)\nCargo Status: SAFE\n\nDear District 4 General Hospital Administration,\n\nWe are writing to notify you of an IMMEDIATE emergency reroute of your critical insulin shipment (SHP-882) currently in transit.\n\nREASON FOR ACTION:\nA HIGH severity storm is now active on Highway 9, the primary route to your facility. Current external temperatures exceed 38\u00b0C with active precipitation. The truck's cooling system can maintain safe conditions for a maximum of 45 minutes if idling in these conditions. Given the current ETA of 35 minutes to your facility and high probability of storm-related delays, there is significant risk of thermal damage to the insulin cargo.\n\nEMERGENCY REROUTE DETAILS:\n- Shipment: SHP-882 (Insulin, $50,000 value)\n- Previous Route: Highway 9 \u2192 District 4 General Hospital\n- NEW ROUTE: Route 7 (via District 3) \u2192 District 3 Cold-Vault\n- NEW DESTINATION: District 3 Cold-Vault (District 3 Industrial Zone)\n- Estimated New ETA: 25-30 minutes\n\nCARGO INTEGRITY ASSURANCE:\nThe insulin will be stored in a certified cold-storage facility pending transfer to your facility. District 3 Cold-Vault maintains identical temperature specifications (2-8\u00b0C) and meets all regulatory requirements. No cargo spoilage will occur. Your hospital will receive the shipment in optimal condition with full chain-of-custody documentation.\n\nNEXT STEPS:\n1. The rerouted shipment will arrive at District 3 Cold-Vault in approximately 25-30 minutes\n2. You will receive transfer notification with updated delivery timeline\n3. Insulin will be collected and delivered to District 4 General Hospital within 2 hours of reroute initiation\n\nFor immediate clarification or concerns, contact:\nBioRoute Control Center: +92-21-9876543\nEmergency Support: Available 24/7\n\nWe appreciate your understanding. Our priority is ensuring zero cargo loss and reliable delivery of critical medical supplies.\n\nBest regards,\nBioRoute Cold-Chain Logistics\nEmergency Operations Team"
-    },
-    {
-      "notification_id": "NOTIF-SHP-882-190707",
-      "timestamp": "2026-05-16T14:07:07.654772+00:00",
-      "shipment_id": "SHP-882",
-      "recipient": "District 4 General Hospital Administration",
-      "urgency_level": "IMMEDIATE",
-      "status": "SENT (simulated)",
-      "channels": [
-        "email",
-        "sms"
-      ],
-      "message": "URGENT: SHP-882 Shipment Reroute Notice\n\nDear District 4 General Hospital Administration,\n\nThis is an emergency notification regarding shipment SHP-882 currently in transit.\n\nSHIPMENT DETAILS:\n- Shipment ID: SHP-882\n- Cargo Type: Temperature-Critical Insulin ($50,000 value)\n- Original Destination: District 4 General Hospital (Coordinates: 24.8607, 67.0011)\n\nHAZARD DETECTED:\nA HIGH-SEVERITY storm has become active on Highway 9, the primary delivery route. Storm delays would cause prolonged idling conditions, which poses critical risk to insulin integrity. Given external temperatures exceeding 38\u00b0C and the truck's 45-minute cooling tolerance when stationary, continued travel on Highway 9 creates unacceptable spoilage risk.\n\nIMMEDIATE ACTION TAKEN:\nYour shipment has been REROUTED EFFECTIVE IMMEDIATELY to District 3 Cold-Vault, a BioRoute-certified backup facility, via Route 7. This route avoids Highway 9 entirely and significantly reduces delay exposure.\n\nNEW DESTINATION: District 3 Cold-Vault (District 3 Industrial Zone)\nESTIMATED NEW ETA: 32 minutes (improved from original 35 minutes due to route optimization and storm avoidance)\nTIME MARGIN BEFORE COOLING FAILURE: Approximately 13 minutes safety buffer\n\nCARGO ASSURANCE:\n- Insulin cargo remains at optimal temperature throughout reroute.\n- District 3 Cold-Vault maintains full pharmaceutical-grade cold storage compliance.\n- Cargo integrity is guaranteed upon arrival.\n\nNEXT STEPS:\nOnce SHP-882 arrives at District 3 Cold-Vault, hospital staff may arrange immediate pickup or secondary delivery at your convenience. The facility will maintain continuous cold-chain compliance.\n\nFor questions or emergencies, contact:\nBioRoute Control Center: +92-21-9876543\n\nWe prioritize patient safety through proactive logistics management.\n\nBest regards,\nBioRoute Cold-Chain Logistics - Dispatch Operations"
-    },
-    {
-      "notification_id": "NOTIF-SHP-901-190907",
-      "timestamp": "2026-05-16T14:09:07.231234+00:00",
-      "shipment_id": "SHP-901",
-      "recipient": "District 1 Clinic Administration",
-      "urgency_level": "IMMEDIATE",
-      "status": "SENT (simulated)",
-      "channels": [
-        "email",
-        "sms"
-      ],
-      "message": "URGENT: Emergency Route Diversion Notification\n\nShipment ID: SHP-901\nCargo Type: Saline IVs\nStatus: Emergency Reroute in Progress\n\nREASON FOR ACTION:\nRoute 66 is fully closed from 11 AM to 5 PM due to VIP visit blockade. The primary route is inaccessible during the truck's scheduled transit window.\n\nREROUTING DECISION:\nTo ensure on-time delivery and prevent cargo spoilage, SHP-901 is being immediately rerouted to District 1 Hub (backup cold-storage facility) via Route 66 Alt (Old City District corridor).\n\nIMPACT ON DELIVERY:\n\u2022 Original ETA to District 1 Clinic: 55 minutes\n\u2022 Alternative Route Delay: +45 minutes\n\u2022 New ETA to District 1 Hub: ~100 minutes\n\u2022 Cargo Status: SAFE - Saline IVs can tolerate up to 180 minutes idle time; current margin is 80+ minutes before spoilage risk.\n\nCARGO INTEGRITY ASSURANCE:\nTemperature monitoring is active. Current ambient: 36\u00b0C. Refrigerated vehicle maintains cold-chain integrity. No spoilage risk with this reroute.\n\nNEXT STEPS:\nThe shipment will be transferred to final delivery from District 1 Hub to District 1 Clinic immediately upon arrival, minimizing any additional delay.\n\nFor urgent inquiries or shipment status updates, contact:\nBioRoute Control Center: +92-21-9876543\nAvailable 24/7"
-    },
-    {
-      "notification_id": "NOTIF-SHP-915-192500",
-      "timestamp": "2026-05-16T14:25:00.962372+00:00",
-      "shipment_id": "SHP-915",
-      "recipient": "District 7 Trauma Center Administration",
-      "urgency_level": "IMMEDIATE",
-      "status": "SENT (simulated)",
-      "channels": [
-        "email",
-        "sms"
-      ],
-      "message": "EMERGENCY SHIPMENT REROUTE NOTIFICATION\n\nShipment ID: SHP-915\nCargo Type: Blood Plasma (Ultra Critical, $120,000 value)\nVehicle: VEH-003\n\nSITUATION:\nHighway 12, the primary route to District 7 Trauma Center, is COMPLETELY CLOSED due to severe weather conditions (85 km/h winds, zero visibility, multiple vehicle incidents including a flipped refrigerated truck). The road has no reopening ETA and is currently impassable.\n\nIMMEDIATE ACTION TAKEN:\nTo prevent critical cargo spoilage, SHP-915 has been IMMEDIATELY REROUTED to District 5 BioStorage (our nearest backup cold-storage facility rated for blood plasma storage). This facility maintains identical temperature and stability conditions required for plasma integrity.\n\nNEW ROUTE: Inner Ring Road (expected 40-minute transit time vs. 18-minute original ETA)\nNEW DESTINATION: District 5 BioStorage, Medical Park\nNEW ETA: Approximately 58 minutes from this notification\n\nCARGO INTEGRITY ASSURANCE:\n\u2022 Blood plasma spoilage threshold: 20 minutes at >35\u00b0C ambient\n\u2022 Current ambient: 29\u00b0C (within safe range)\n\u2022 Vehicle VEH-003 is actively refrigerated and moving\n\u2022 Route is fully passable with no hazards\n\u2022 Cargo will arrive at District 5 BioStorage in perfect condition\n\nNEXT STEPS FOR DISTRICT 7 TRAUMA CENTER:\nDistrict 5 BioStorage will immediately notify you upon cargo arrival for collection or re-transfer to your facility via safe alternate route. Your blood plasma supply will be preserved without degradation.\n\nEmergency Contact:\nBioRoute Control Center: +92-21-9876543\nAvailable 24/7 for coordination and real-time updates\n\nWe apologize for this weather-related disruption. Your patient care mission remains our highest priority, and this reroute ensures zero compromise to your critical blood plasma supply.\n\nBioRoute Cold-Chain Logistics\nEmergency Operations Division"
-    },
-    {
-      "notification_id": "NOTIF-SHP-882-194238",
-      "timestamp": "2026-05-16T14:42:38.405290+00:00",
-      "shipment_id": "SHP-882",
-      "recipient": "District 4 General Hospital Administration",
-      "urgency_level": "IMMEDIATE",
-      "status": "SENT (simulated)",
-      "channels": [
-        "email",
-        "sms"
-      ],
-      "message": "URGENT: EMERGENCY REROUTE NOTIFICATION \u2013 SHIPMENT SHP-882\n\nDear District 4 General Hospital Administration,\n\nThis is an urgent notification regarding the emergency reroute of your insulin shipment currently in transit to your facility.\n\n**SHIPMENT DETAILS:**\n- Shipment ID: SHP-882\n- Cargo: Insulin (CRITICAL - Temperature Sensitive)\n- Cargo Value: $50,000\n- Urgency Level: IMMEDIATE\n\n**EMERGENCY SITUATION:**\nHighway 9, the primary route for your shipment, has become impassable due to severe flooding. Road authorities have issued a 90+ minute closure notice. Given that your original ETA was 35 minutes and insulin can only remain safely refrigerated for 45 minutes under current conditions, continuing on the original route would result in guaranteed cargo spoilage and medical shortage at your facility.\n\n**ACTION TAKEN:**\nTo protect your critical insulin supply and ensure delivery, we have immediately rerouted your shipment to District 3 Cold-Vault, our designated backup cold-storage facility. This route (Route 7 via District 3) avoids the flooded Highway 9 entirely and maintains the refrigeration integrity of your cargo.\n\n**REVISED DELIVERY PLAN:**\n- New Intermediate Destination: District 3 Cold-Vault (for secure temporary storage)\n- Estimated Arrival at Cold-Vault: TBD - calculating\n- Onward Delivery to Your Hospital: TBD - will confirm once shipment is secured\n- Expected Final Delivery Window: Within 2 hours\n\n**REQUIRED ACTIONS:**\n1. Alert your receiving/pharmacy team of the revised delivery timeline\n2. Prepare to receive insulin shipment with updated ETA\n3. Coordinate with our dispatch team for final delivery logistics\n4. Standby for updated ETA confirmation within the next 15 minutes\n\n**EMERGENCY CONTACT:**\nFor any urgent questions or coordination needs, please contact:\nBioRoute Control Center: +92-21-9876543 (Available 24/7)\n\nYour insulin supply is our priority. We are taking immediate action to ensure zero spoilage and successful delivery.\n\nBest regards,\nBioRoute Cold-Chain Dispatch Team"
+      "message": "REROUTE INSTRUCTION: N-5 near Gharo is FLOODED and CLOSED (minimum 90 minutes). DO NOT attempt to cross. Your new route: M-9 Thatta Bypass. Navigate to Hyderabad Cold-Vault (25.401\u00b0N, 68.342\u00b0E) for mandatory cold-chain inspection under current 38\u00b0C heat. Your insulin cargo is temperature-critical (45-minute failure window). Proceed IMMEDIATELY to M-9. Contact dispatch if blocked or delayed: dispatch@bioroute.pk. Revised ETA: 52 minutes to vault."
+    }
+  ]
+} shipment at unconditioned facility. Contact BioRoute Dispatch (dispatch@bioroute.pk) immediately with any delays. Reroute initiated at 2024-12-19 14:XX UTC."
     }
   ]
 }
