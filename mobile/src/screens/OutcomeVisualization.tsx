@@ -12,7 +12,6 @@ import {
   Easing,
   Image,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '../components/GlassCard';
 import ScreenHeader from '../components/ScreenHeader';
@@ -24,11 +23,9 @@ const OUTCOME_HERO = require('../../assets/outcome-hero.png');
 function OutcomeHero() {
   return (
     <View style={styles.heroCard} pointerEvents="none">
-      <Image source={OUTCOME_HERO} style={styles.heroImg} resizeMode="cover" />
-      <LinearGradient
-        colors={['transparent', 'rgba(249,250,251,0.85)', '#F9FAFB']}
-        style={styles.heroFade}
-      />
+      <View style={styles.heroInner}>
+        <Image source={OUTCOME_HERO} style={styles.heroImg} resizeMode="cover" />
+      </View>
     </View>
   );
 }
@@ -268,17 +265,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  heroInner: {
+    height: 172,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+  },
   heroImg: {
     width: '100%',
-    height: 168,
-    backgroundColor: '#F3F4F6',
-  },
-  heroFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 40,
+    height: 220,
+    backgroundColor: '#FFFFFF',
+    marginTop: -8,
   },
   toggleWrap: { alignItems: 'center', marginBottom: 16 },
   toggle: {

@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Image,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SubagentStartToast from '../components/SubagentStartToast';
 import ScreenHeader from '../components/ScreenHeader';
@@ -12,6 +19,18 @@ import type { AgentActivity, OrchestratorTodo } from '../types/agent';
 import type { SubagentStartNotice } from '../types/subagentNotice';
 import type { PipelinePhase, TimelineEvent } from '../types/timeline';
 import { FontFamily, pageStyles, Page } from '../theme';
+
+const AGENT_HERO = require('../../assets/agent-hero.png');
+
+function AgentHero() {
+  return (
+    <View style={styles.heroCard} pointerEvents="none">
+      <View style={styles.heroInner}>
+        <Image source={AGENT_HERO} style={styles.heroImg} resizeMode="cover" />
+      </View>
+    </View>
+  );
+}
 
 interface Props {
   isAnalyzing: boolean;
@@ -98,6 +117,8 @@ export default function AgentScreen({
           }
         />
 
+        <AgentHero />
+
         <PipelineProgress
           phase={pipelinePhase}
           percent={progress.percent}
@@ -159,6 +180,30 @@ export default function AgentScreen({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
+  heroCard: {
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  heroInner: {
+    height: 172,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+  },
+  heroImg: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#FFFFFF',
+    marginTop: -8,
+  },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
