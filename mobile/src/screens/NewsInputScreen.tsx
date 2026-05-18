@@ -11,15 +11,15 @@ import {
   Modal,
   Pressable,
   Image,
+  useWindowDimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AnimatedGlobeHero from '../components/AnimatedGlobeHero';
 import ScenarioPicker from '../components/ScenarioPicker';
 import { fetchHealth, fetchScenarios } from '../api/client';
 import type { Scenario } from '../types/shipment';
 import { Colors, FontFamily } from '../theme';
 
-const GLOBE_IMAGE = require('../../assets/image.png');
 const APP_ICON = require('../../assets/icon.png');
 
 interface Props {
@@ -58,6 +58,9 @@ export default function NewsInputScreen({
   const [editorOpen, setEditorOpen] = useState(false);
   const [online, setOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { width: screenWidth } = useWindowDimensions();
+  const heroTextMaxWidth = Math.min(screenWidth * 0.56, screenWidth - 200);
 
   const canLaunch = Boolean(alertText.trim()) && !isAnalyzing && !isResetting;
   const busy = isAnalyzing || isResetting;
@@ -104,14 +107,7 @@ export default function NewsInputScreen({
 
   return (
     <View style={styles.root}>
-      {/* Globe — prominent, real asset */}
-      <View style={styles.globeLayer} pointerEvents="none">
-        <Image source={GLOBE_IMAGE} style={styles.globeImg} resizeMode="contain" />
-        <LinearGradient
-          colors={['transparent', 'rgba(249,250,251,0.4)', '#F9FAFB']}
-          style={styles.globeBottomFade}
-        />
-      </View>
+      <AnimatedGlobeHero />
 
       <ScrollView
         style={styles.scroll}
@@ -153,10 +149,12 @@ export default function NewsInputScreen({
           </View>
         </View>
 
-        <Text style={styles.hero}>Autonomous Crisis Intelligence</Text>
-        <Text style={styles.lead}>
-          Transform live signals into coordinated AI-driven actions.
-        </Text>
+        <View style={[styles.heroTextBlock, { maxWidth: heroTextMaxWidth }]}>
+          <Text style={styles.hero}>Autonomous Crisis Intelligence</Text>
+          <Text style={styles.lead}>
+            Transform live signals into coordinated AI-driven actions.
+          </Text>
+        </View>
 
         <View style={styles.card}>
           <View style={styles.flowRow}>
@@ -298,31 +296,6 @@ export default function NewsInputScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F9FAFB' },
 
-  globeLayer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 300,
-    height: 300,
-    zIndex: 0,
-    overflow: 'hidden',
-  },
-  globeImg: {
-    position: 'absolute',
-    top: -24,
-    right: -56,
-    width: 360,
-    height: 360,
-    opacity: 0.92,
-  },
-  globeBottomFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 80,
-  },
-
   scroll: { flex: 1, zIndex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 6 },
 
@@ -390,6 +363,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  heroTextBlock: {
+    marginBottom: 20,
+    zIndex: 2,
+  },
   hero: {
     fontFamily: FontFamily.bold,
     fontSize: 26,
@@ -397,15 +374,12 @@ const styles = StyleSheet.create({
     color: '#111827',
     letterSpacing: -0.5,
     marginBottom: 6,
-    maxWidth: '75%',
   },
   lead: {
     fontFamily: FontFamily.regular,
     fontSize: 15,
     lineHeight: 22,
     color: '#6B7280',
-    marginBottom: 20,
-    maxWidth: '88%',
   },
 
   card: {

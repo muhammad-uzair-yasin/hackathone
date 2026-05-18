@@ -38,6 +38,19 @@
         "sms"
       ],
       "message": "URGENT BIOROUTE ALERT: Emergency reroute for SHP-915 (Blood Plasma, Ultra Critical, $120,000) due to complete closure of Murree Road corridor by severe storm.\n\nHAZARD: Murree Road completely shut down. 85 km/h wind gusts, near-zero visibility, refrigerated truck flipped at Committee Chowk. Temperature currently 29\u00b0C, forecast to drop 8\u00b0C by nightfall.\n\nSHIPMENT: SHP-915 rerouting immediately via Srinagar Highway to Holy Family Hospital.\n- Original route: Murree Rd Islamabad \u2192 Rawalpindi\n- New route: Srinagar Highway (20-minute ETA)\n- Cargo: Blood Plasma (Ultra Critical) \u2014 20-minute spoilage window at current temperature\n- Status: Emergency Reroute\n- Destination unchanged: Holy Family Hospital\n\nCRITICAL: Blood plasma must remain below 35\u00b0C. Current ambient 29\u00b0C with downward trend. Ensure receiving bay is staffed and cold-chain handoff is ready upon arrival. Temperature-controlled truck en route now.\n\nFor real-time tracking or questions, contact dispatch emergency hotline immediately.\n\nStay safe."
+    },
+    {
+      "notification_id": "NOTIF-SHP-882-093839",
+      "timestamp": "2026-05-18T04:38:39.676304+00:00",
+      "shipment_id": "SHP-882",
+      "recipient": "Liaquat Hospital, Jamshoro Administration",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "channels": [
+        "email",
+        "sms"
+      ],
+      "message": "URGENT ALERT: Shipment SHP-882 (Insulin, $50,000, Temperature Critical) has been emergency rerouted due to Port of Karachi strike delays. Your shipment is now diverted via M-9 Thatta Bypass with secure cold-vault handoff at Hyderabad Cold-Vault to maintain temperature integrity. New ETA: 52 minutes, within the pharmaceutical priority processing window. Cargo remains marked CRITICAL and will proceed to Liaquat Hospital, Jamshoro immediately upon cold-vault transfer. No thermal compromise. Contact: BioRoute Emergency Operations."
     }
   ]
 }

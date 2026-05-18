@@ -10,25 +10,13 @@ import {
   StyleSheet,
   Animated,
   Easing,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedOutcomeHero from '../components/AnimatedOutcomeHero';
 import GlassCard from '../components/GlassCard';
 import ScreenHeader from '../components/ScreenHeader';
 import ReasonMarkdownPanel from '../components/ReasonMarkdownPanel';
 import { FontFamily, pageStyles, Page } from '../theme';
-
-const OUTCOME_HERO = require('../../assets/outcome-hero.png');
-
-function OutcomeHero() {
-  return (
-    <View style={styles.heroCard} pointerEvents="none">
-      <View style={styles.heroInner}>
-        <Image source={OUTCOME_HERO} style={styles.heroImg} resizeMode="cover" />
-      </View>
-    </View>
-  );
-}
 
 export interface ShipmentState {
   shipmentId: string;
@@ -101,7 +89,7 @@ export default function OutcomeVisualization({
     return (
       <ScrollView style={pageStyles.screen} contentContainerStyle={pageStyles.content} showsVerticalScrollIndicator={false}>
         <ScreenHeader kicker="Outcome" title="Run outcome" subtitle="Why the route changed" />
-        <OutcomeHero />
+        <AnimatedOutcomeHero celebrate={false} />
         <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} />
         {onRefreshSummary ? (
           <TouchableOpacity style={pageStyles.secondaryBtn} onPress={onRefreshSummary}>
@@ -116,6 +104,13 @@ export default function OutcomeVisualization({
   const current = activeView === 'before' ? beforeState! : afterState || beforeState!;
   const isBefore = activeView === 'before' || !afterState;
   const shipmentLabel = current.shipmentId.replace('SHP-', '#');
+  const fleetUpdated = Boolean(
+    afterState &&
+      beforeState &&
+      (afterState.route !== beforeState.route ||
+        afterState.status !== beforeState.status ||
+        afterState.destination !== beforeState.destination)
+  );
 
   return (
     <ScrollView style={pageStyles.screen} contentContainerStyle={pageStyles.content} showsVerticalScrollIndicator={false}>
@@ -133,7 +128,7 @@ export default function OutcomeVisualization({
         }
       />
 
-      <OutcomeHero />
+      <AnimatedOutcomeHero celebrate={fleetUpdated && pipelineComplete} />
 
       {summaryMarkdown ? (
         <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} defaultOpen />
@@ -252,30 +247,6 @@ const styles = StyleSheet.create({
     borderColor: '#A7F3D0',
   },
   doneText: { fontFamily: FontFamily.semiBold, fontSize: 10, color: '#059669' },
-  heroCard: {
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  heroInner: {
-    height: 172,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-  },
-  heroImg: {
-    width: '100%',
-    height: 220,
-    backgroundColor: '#FFFFFF',
-    marginTop: -8,
-  },
   toggleWrap: { alignItems: 'center', marginBottom: 16 },
   toggle: {
     flexDirection: 'row',
