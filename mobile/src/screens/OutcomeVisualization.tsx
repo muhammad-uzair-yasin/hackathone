@@ -1,15 +1,14 @@
 /**
  * Outcome — before/after from live agent run + summary.md
  */
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Animated,
-  Easing,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedOutcomeHero from '../components/AnimatedOutcomeHero';
@@ -44,27 +43,28 @@ export default function OutcomeVisualization({
   summaryFile,
   onRefreshSummary,
 }: Props) {
-  const [activeView, setActiveView] = useState<'before' | 'after'>('after');
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [activeView, setActiveView] = useState<'before' | 'after'>(
+    afterState ? 'after' : 'before'
+  );
 
   const hasData = Boolean(beforeState || afterState);
+  const canShowBefore = Boolean(beforeState);
+  const canShowAfter = Boolean(afterState);
+
+  useEffect(() => {
+    if (!afterState && activeView === 'after') {
+      setActiveView('before');
+    }
+  }, [afterState, activeView]);
 
   const toggleView = (view: 'before' | 'after') => {
-    if (view === 'after' && !afterState) return;
-    if (view === 'before' && !beforeState) return;
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-        Animated.timing(scaleAnim, { toValue: 0.98, duration: 150, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
-        Animated.timing(scaleAnim, { toValue: 1, duration: 250, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
-      ]),
-    ]).start();
+    if (view === activeView) return;
+    if (view === 'after' && !canShowAfter) return;
+    if (view === 'before' && !canShowBefore) return;
     setActiveView(view);
   };
+
+  const isBefore = activeView === 'before';
 
   if (!hasData && !summaryMarkdown) {
     return (
@@ -101,8 +101,10 @@ export default function OutcomeVisualization({
     );
   }
 
-  const current = activeView === 'before' ? beforeState! : afterState || beforeState!;
-  const isBefore = activeView === 'before' || !afterState;
+  const current =
+    activeView === 'before'
+      ? beforeState ?? afterState!
+      : afterState ?? beforeState!;
   const shipmentLabel = current.shipmentId.replace('SHP-', '#');
   const fleetUpdated = Boolean(
     afterState &&
@@ -136,26 +138,26 @@ export default function OutcomeVisualization({
 
       <View style={styles.toggleWrap}>
         <View style={styles.toggle}>
-          <TouchableOpacity
-            style={[styles.toggleBtn, isBefore && styles.toggleOn]}
+          <Pressable
+            style={[styles.toggleBtn, isBefore && styles.toggleOn, !canShowBefore && styles.toggleDisabled]}
             onPress={() => toggleView('before')}
-            disabled={!beforeState}
+            disabled={!canShowBefore}
           >
             <Text style={[styles.toggleTxt, isBefore && styles.toggleTxtOn]}>Before</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleBtn, !isBefore && styles.toggleOn]}
+          </Pressable>
+          <Pressable
+            style={[styles.toggleBtn, !isBefore && styles.toggleOn, !canShowAfter && styles.toggleDisabled]}
             onPress={() => toggleView('after')}
-            disabled={!afterState}
+            disabled={!canShowAfter}
           >
             <Text style={[styles.toggleTxt, !isBefore && styles.toggleTxtOn]}>After</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
         <Text style={styles.shipTitle}>Shipment {shipmentLabel}</Text>
         <Text style={styles.shipSub}>{current.cargo}</Text>
       </View>
 
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
+      <View key={activeView}>
         <GlassCard style={styles.detailCard}>
           <View style={[styles.tag, isBefore ? styles.tagBefore : styles.tagAfter]}>
             <Text style={[styles.tagTxt, !isBefore && styles.tagTxtAfter]}>
@@ -183,7 +185,7 @@ export default function OutcomeVisualization({
             </View>
           ) : null}
         </GlassCard>
-      </Animated.View>
+      </View>
 
       {!afterState && beforeState && pipelineComplete ? (
         <Text style={styles.waiting}>
@@ -255,8 +257,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 12,
   },
-  toggleBtn: { paddingHorizontal: 22, paddingVertical: 8, borderRadius: 8 },
+  toggleBtn: {
+    paddingHorizontal: 22,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 88,
+    alignItems: 'center',
+  },
   toggleOn: { backgroundColor: '#FFF' },
+  toggleDisabled: { opacity: 0.45 },
   toggleTxt: { fontFamily: FontFamily.medium, fontSize: 13, color: '#6B7280' },
   toggleTxtOn: { fontFamily: FontFamily.semiBold, color: Page.primary },
   shipTitle: { fontFamily: FontFamily.semiBold, fontSize: 16, color: '#111827' },
