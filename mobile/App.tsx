@@ -25,6 +25,7 @@ import FleetScreen from './src/screens/FleetScreen';
 import ShipmentDetailScreen from './src/screens/ShipmentDetailScreen';
 import AgentScreen from './src/screens/AgentScreen';
 import OutcomeVisualization from './src/screens/OutcomeVisualization';
+import AppDialog from './src/components/AppDialog';
 import type { Shipment } from './src/types/shipment';
 import { Colors } from './src/theme';
 
@@ -40,6 +41,7 @@ export default function App() {
   const [detailShipment, setDetailShipment] = useState<Shipment | null>(null);
   const [fleetRefreshKey, setFleetRefreshKey] = useState(0);
   const [newsResetToken, setNewsResetToken] = useState(0);
+  const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
 
   const {
     isAnalyzing,
@@ -68,11 +70,16 @@ export default function App() {
   } = useAgentStream();
 
   const handleResetDemo = async () => {
-    const ok = await resetDemo();
-    if (ok) {
+    const result = await resetDemo();
+    if (result === true) {
       setNewsResetToken((t) => t + 1);
       setFleetRefreshKey((k) => k + 1);
-      Alert.alert('Demo reset', 'Fleet data and agent state restored. Pick an alert and run again.');
+      setDialog({
+        title: 'Demo reset',
+        message: 'Fleet data and agent state restored. Pick an alert and run again.',
+      });
+    } else {
+      setDialog({ title: 'Reset failed', message: result });
     }
   };
 
@@ -189,6 +196,15 @@ export default function App() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.pageBackground} />
       <View style={styles.body}>{renderScreen()}</View>
       <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
+
+      <AppDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ''}
+        message={dialog?.message}
+        primaryLabel="OK"
+        onPrimary={() => setDialog(null)}
+        onRequestClose={() => setDialog(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -11,10 +11,12 @@ import {
   Modal,
   Pressable,
   Image,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AnimatedGlobeHero from '../components/AnimatedGlobeHero';
+import AppDialog from '../components/AppDialog';
 import ScenarioPicker from '../components/ScenarioPicker';
 import { fetchHealth, fetchScenarios } from '../api/client';
 import type { Scenario } from '../types/shipment';
@@ -58,6 +60,7 @@ export default function NewsInputScreen({
   const [editorOpen, setEditorOpen] = useState(false);
   const [online, setOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   const { width: screenWidth } = useWindowDimensions();
   const heroTextMaxWidth = Math.min(screenWidth * 0.56, screenWidth - 200);
@@ -86,15 +89,14 @@ export default function NewsInputScreen({
     setAlertText(s.text);
   };
 
-  const handleReset = () => {
-    Alert.alert(
-      'Reset demo?',
-      'Restores fleet data and clears the last agent run.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Reset', style: 'destructive', onPress: () => onResetDemo?.() },
-      ]
-    );
+  const handleResetPress = () => {
+    if (!onResetDemo) return;
+    setResetDialogOpen(true);
+  };
+
+  const handleResetConfirm = async () => {
+    await onResetDemo?.();
+    setResetDialogOpen(false);
   };
 
   const handleRun = () => {
@@ -247,9 +249,10 @@ export default function NewsInputScreen({
 
         <TouchableOpacity
           style={styles.secondaryBtn}
-          onPress={handleReset}
-          disabled={busy}
+          onPress={handleResetPress}
+          disabled={isResetting || !onResetDemo}
           activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
         >
           {isResetting ? (
             <ActivityIndicator color="#6B7280" size="small" />
@@ -263,6 +266,19 @@ export default function NewsInputScreen({
 
         <View style={{ height: 16 }} />
       </ScrollView>
+
+      <AppDialog
+        visible={resetDialogOpen}
+        title="Reset demo?"
+        message="Restores fleet data and clears the last agent run."
+        primaryLabel="Reset"
+        secondaryLabel="Cancel"
+        primaryDestructive
+        loading={isResetting}
+        onPrimary={() => void handleResetConfirm()}
+        onSecondary={() => !isResetting && setResetDialogOpen(false)}
+        onRequestClose={() => !isResetting && setResetDialogOpen(false)}
+      />
 
       <Modal visible={editorOpen} animationType="slide" transparent onRequestClose={() => setEditorOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setEditorOpen(false)}>
@@ -297,7 +313,11 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F9FAFB' },
 
   scroll: { flex: 1, zIndex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 6 },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: Platform.OS === 'web' ? 24 : 96,
+  },
 
   header: {
     flexDirection: 'row',

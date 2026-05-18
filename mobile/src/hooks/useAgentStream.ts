@@ -7,7 +7,7 @@ import {
   resetDemoSession,
 } from '../api/client';
 import type { SummaryDocument } from '../types/summary';
-import { connectSSE } from '../api/sse';
+import { connectSSE, type SSEConnection } from '../api/sse';
 
 const EXECUTION_TOOLS = new Set(['update_crm_tool', 'notify_tool', 'write_summary_tool']);
 import {
@@ -89,6 +89,14 @@ export function useAgentStream() {
   const completeReceivedRef = useRef(false);
   const outcomeHandledRef = useRef(false);
   const completedExecutionToolsRef = useRef<Set<string>>(new Set());
+  const sseRef = useRef<SSEConnection | null>(null);
+  const streamAbortedRef = useRef(false);
+
+  const abortActiveStream = useCallback(() => {
+    streamAbortedRef.current = true;
+    sseRef.current?.abort();
+    sseRef.current = null;
+  }, []);
 
   const loadSummary = useCallback(async () => {
     const doc = await fetchSummaryDocument();
@@ -676,6 +684,7 @@ export function useAgentStream() {
     async (alertText: string, onStarted?: () => void) => {
       if (!alertText.trim()) return;
 
+      streamAbortedRef.current = false;
       setIsAnalyzing(true);
       setError(null);
       setTodos([]);
@@ -699,14 +708,16 @@ export function useAgentStream() {
       onStarted?.();
 
       try {
+        abortActiveStream();
         const { url, body } = streamAnalyzePost(alertText);
         await new Promise<void>((resolve, reject) => {
-          connectSSE(url, {
+          const conn = connectSSE(url, {
             method: 'POST',
             body,
             onEvent: handleEvent,
             onError: reject,
             onDone: () => {
+              sseRef.current = null;
               if (!completeReceivedRef.current) {
                 finalizePipeline();
                 finalizeExecutionToolsOnComplete(false, 'completed');
@@ -717,15 +728,19 @@ export function useAgentStream() {
               resolve();
             },
           });
+          sseRef.current = conn;
         });
         setPipelinePhase((p) => (p === 'running' ? 'complete' : p));
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : 'Connection failed';
-        setError(msg);
-        setPipelinePhase('error');
-        upsertActivity('error', { label: 'Error', status: 'error', what: msg, expanded: true });
-        appendTimeline({ kind: 'error', title: 'Connection failed', body: msg, status: 'error' });
+        if (!streamAbortedRef.current) {
+          const msg = e instanceof Error ? e.message : 'Connection failed';
+          setError(msg);
+          setPipelinePhase('error');
+          upsertActivity('error', { label: 'Error', status: 'error', what: msg, expanded: true });
+          appendTimeline({ kind: 'error', title: 'Connection failed', body: msg, status: 'error' });
+        }
       } finally {
+        sseRef.current = null;
         setIsAnalyzing(false);
         if (!outcomeHandledRef.current) {
           const dbAfter = await fetchDbShipments();
@@ -746,6 +761,7 @@ export function useAgentStream() {
       outcomeBefore,
       setAffected,
       upsertActivity,
+      abortActiveStream,
     ]
   );
 
@@ -755,10 +771,14 @@ export function useAgentStream() {
     );
   }, []);
 
-  const resetDemo = useCallback(async () => {
-    if (isAnalyzing || isResetting) return false;
+  const resetDemo = useCallback(async (): Promise<true | string> => {
+    if (isResetting) return 'Reset already in progress';
     setIsResetting(true);
     setError(null);
+    abortActiveStream();
+    setIsAnalyzing(false);
+    setPipelinePhase('idle');
+    setStatusLine('');
     try {
       await resetDemoSession();
       setTodos([]);
@@ -766,8 +786,6 @@ export function useAgentStream() {
       setTimeline([]);
       setSubagentNotices([]);
       seqRef.current = 0;
-      setPipelinePhase('idle');
-      setStatusLine('');
       setOutcomeBefore(null);
       setOutcomeAfter(null);
       outcomeHandledRef.current = false;
@@ -779,11 +797,11 @@ export function useAgentStream() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Reset failed';
       setError(msg);
-      return false;
+      return msg;
     } finally {
       setIsResetting(false);
     }
-  }, [isAnalyzing, isResetting]);
+  }, [abortActiveStream, isResetting]);
 
   return {
     isAnalyzing,

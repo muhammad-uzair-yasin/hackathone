@@ -48,9 +48,13 @@ export function streamAnalyzePost(alertText: string): { url: string; body: strin
 export async function resetDemoSession(): Promise<{ ok: boolean; message?: string }> {
   const res = await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
   if (!res.ok) {
-    throw new Error(`Reset failed (${res.status})`);
+    throw new Error(`Reset failed (${res.status}) — is the backend running at ${API_BASE}?`);
   }
-  return res.json();
+  const data = (await res.json()) as { ok?: boolean; message?: string };
+  if (data.ok === false) {
+    throw new Error(data.message || 'Reset failed — baseline file may be missing on server');
+  }
+  return { ok: true, message: data.message };
 }
 
 export async function fetchSummaryDocument(): Promise<SummaryDocument | null> {
