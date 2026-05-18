@@ -1,7 +1,7 @@
 /**
  * Outcome — before/after from live agent run + summary.md
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,28 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '../components/GlassCard';
 import ScreenHeader from '../components/ScreenHeader';
 import ReasonMarkdownPanel from '../components/ReasonMarkdownPanel';
 import { FontFamily, pageStyles, Page } from '../theme';
+
+const OUTCOME_HERO = require('../../assets/outcome-hero.png');
+
+function OutcomeHero() {
+  return (
+    <View style={styles.heroCard} pointerEvents="none">
+      <Image source={OUTCOME_HERO} style={styles.heroImg} resizeMode="cover" />
+      <LinearGradient
+        colors={['transparent', 'rgba(249,250,251,0.85)', '#F9FAFB']}
+        style={styles.heroFade}
+      />
+    </View>
+  );
+}
 
 export interface ShipmentState {
   shipmentId: string;
@@ -48,7 +64,6 @@ export default function OutcomeVisualization({
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const hasData = Boolean(beforeState || afterState);
-  const showAfter = Boolean(afterState);
 
   const toggleView = (view: 'before' | 'after') => {
     if (view === 'after' && !afterState) return;
@@ -89,6 +104,7 @@ export default function OutcomeVisualization({
     return (
       <ScrollView style={pageStyles.screen} contentContainerStyle={pageStyles.content} showsVerticalScrollIndicator={false}>
         <ScreenHeader kicker="Outcome" title="Run outcome" subtitle="Why the route changed" />
+        <OutcomeHero />
         <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} />
         {onRefreshSummary ? (
           <TouchableOpacity style={pageStyles.secondaryBtn} onPress={onRefreshSummary}>
@@ -119,6 +135,8 @@ export default function OutcomeVisualization({
           ) : null
         }
       />
+
+      <OutcomeHero />
 
       {summaryMarkdown ? (
         <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} defaultOpen />
@@ -237,6 +255,31 @@ const styles = StyleSheet.create({
     borderColor: '#A7F3D0',
   },
   doneText: { fontFamily: FontFamily.semiBold, fontSize: 10, color: '#059669' },
+  heroCard: {
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  heroImg: {
+    width: '100%',
+    height: 168,
+    backgroundColor: '#F3F4F6',
+  },
+  heroFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 40,
+  },
   toggleWrap: { alignItems: 'center', marginBottom: 16 },
   toggle: {
     flexDirection: 'row',

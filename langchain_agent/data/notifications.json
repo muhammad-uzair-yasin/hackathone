@@ -25,6 +25,19 @@
         "sms"
       ],
       "message": "URGENT: Blood Plasma shipment SHP-915 ($120,000, Ultra-Critical) rerouted due to Murree Road closure from severe storm. Severe winds (85 km/h), zero visibility, and flipped refrigerated truck have shut down the primary corridor. Shipment now rerouted to Srinagar Highway for 20-minute ETA (within 20-minute plasma integrity threshold). Truck is en route now. Contact BioRoute Emergency Line for updates."
+    },
+    {
+      "notification_id": "NOTIF-SHP-915-075911",
+      "timestamp": "2026-05-18T02:59:11.312855+00:00",
+      "shipment_id": "SHP-915",
+      "recipient": "Holy Family Hospital Administration",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "channels": [
+        "email",
+        "sms"
+      ],
+      "message": "URGENT BIOROUTE ALERT: Emergency reroute for SHP-915 (Blood Plasma, Ultra Critical, $120,000) due to complete closure of Murree Road corridor by severe storm.\n\nHAZARD: Murree Road completely shut down. 85 km/h wind gusts, near-zero visibility, refrigerated truck flipped at Committee Chowk. Temperature currently 29\u00b0C, forecast to drop 8\u00b0C by nightfall.\n\nSHIPMENT: SHP-915 rerouting immediately via Srinagar Highway to Holy Family Hospital.\n- Original route: Murree Rd Islamabad \u2192 Rawalpindi\n- New route: Srinagar Highway (20-minute ETA)\n- Cargo: Blood Plasma (Ultra Critical) \u2014 20-minute spoilage window at current temperature\n- Status: Emergency Reroute\n- Destination unchanged: Holy Family Hospital\n\nCRITICAL: Blood plasma must remain below 35\u00b0C. Current ambient 29\u00b0C with downward trend. Ensure receiving bay is staffed and cold-chain handoff is ready upon arrival. Temperature-controlled truck en route now.\n\nFor real-time tracking or questions, contact dispatch emergency hotline immediately.\n\nStay safe."
     }
   ]
 }

@@ -1,13 +1,13 @@
 # BioRoute Run Summary
 
-_Session REQ-134500 · completed · 2026-05-17T16:21:04.167993+00:00_
+_Session REQ-145900 · completed · 2026-05-18T02:59:29.631566+00:00_
 
-Severe storm with 85 km/h winds shut down Murree Road at Committee Chowk, with a flipped refrigerated truck blocking the corridor. One active shipment, SHP-915 carrying ultra-critical blood plasma worth $120,000, was en route to Holy Family Hospital with only 18 minutes to destination—below the 20-minute plasma integrity threshold. Rerouted SHP-915 immediately to Srinagar Highway (20-minute ETA), bypassing the closure and flagged Expressway congestion. Updated CRM database and notified Holy Family Hospital Emergency Department with full details. Plasma delivery now secured within safe cold-chain window.
+Severe storm shut down Murree Road toward Rawalpindi with 85 km/h winds and near-zero visibility; refrigerated truck flipped at Committee Chowk. One critical shipment, SHP-915 carrying ultra-temperature-sensitive blood plasma to Holy Family Hospital with 18-minute ETA, was on the blocked corridor. Plasma spoils in 20 minutes above 35°C. System rerouted SHP-915 via Srinagar Highway (20-minute ETA) and notified hospital immediately to prepare cold-chain handoff. Shipment remains on-time within spoilage window. CRM updated, hospital alerted IMMEDIATE.
 
 <!--BIOROUTE_PIPELINE
 {
-  "session_id": "REQ-134500",
-  "timestamp": "2026-05-17T16:21:04.167993+00:00",
+  "session_id": "REQ-145900",
+  "timestamp": "2026-05-18T02:59:29.631566+00:00",
   "status": "completed",
   "pipeline": {
     "step_1_hazard_extraction": {
@@ -34,14 +34,13 @@ Severe storm with 85 km/h winds shut down Murree Road at Committee Chowk, with a
       "active_shipments": [
         {
           "shipment_id": "SHP-915",
-          "route_name": "Murree Rd Islamabad \u2013 Rawalpindi",
+          "route_name": "Murree Rd Islamabad \u2192 Rawalpindi",
           "cargo_type": "Blood Plasma (Ultra Critical)",
           "eta_minutes": 18,
           "destination": "Holy Family Hospital"
         }
       ],
-      "display_summary": "1 truck on affected corridor: SHP-915 (Blood Plasma) on Murree Rd, ETA 18 min to Holy Family Hospital",
-      "why_brief": "Know shipment locations before matching routes to alert protocols"
+      "display_summary": "1 truck affected: SHP-915 on Murree Rd Islamabad \u2192 Rawalpindi to Holy Family Hospital"
     },
     "step_3_impact_analysis": {
       "impact_detected": true,
@@ -55,83 +54,52 @@ Severe storm with 85 km/h winds shut down Murree Road at Committee Chowk, with a
       "primary_route": "Murree Rd Islamabad \u2192 Rawalpindi",
       "destination": "Holy Family Hospital",
       "current_status": "In Transit (On Time)",
+      "operational_impact": "Murree Rd corridor completely shut down due to severe storm (85 km/h winds, near-zero visibility). Refrigerated truck flipped at Committee Chowk. Route blocked with no ETA on reopening. Temperature dropping (currently 29\u00b0C, forecast -8\u00b0C by nightfall). Plasma must stay below 35\u00b0C with 20-minute safe idle limit.",
       "time_to_failure_minutes": 20,
+      "financial_consequence": "$120,000 cargo spoilage + critical blood supply shortage for emergency surgery capacity",
+      "medical_consequence": "Blood plasma loss affects Holy Family Hospital emergency and trauma surgery capacity; life-critical transfusions may be delayed or cancelled",
       "risk_level": "CRITICAL",
-      "requires_immediate_action": true,
-      "action_reason": "SHP-915 on Murree Road corridor which is completely closed by severe storm at Committee Chowk; 18-minute ETA vs. 20-minute safe idle threshold leaves no margin\u2014immediate reroute via Srinagar Highway (20 min ETA) is only viable option.",
-      "why_brief": "SHP-915 on blocked Murree Rd corridor; storm closure + flipped truck at Committee Chowk prevents primary route; 20-minute safe idle window for plasma requires immediate alternative reroute."
+      "requires_immediate_action": true
     },
     "step_4_action_plan": {
-      "recommended_action": "Execute immediate reroute to Srinagar Highway (20 min ETA) to bypass Murree Road closure and avoid flagged Expressway congestion delays.",
+      "recommended_action": "Reroute SHP-915 via Srinagar Highway (20 min ETA) to Holy Family Hospital; temperature dropping\u2014fastest path within spoilage window.",
       "action_type": "REROUTE",
       "urgency": "IMMEDIATE",
       "estimated_eta_minutes": 20,
-      "selected_alternative_id": "A2",
       "selected_route_name": "Srinagar Highway",
-      "selection_rationale": "Srinagar Highway (20 min ETA) is the optimal choice. It matches the 20-minute plasma failure threshold exactly, avoiding the flagged 40-minute delays on Islamabad Expressway (A1). While IJP Road (A3, 24 min) and GT Road (A4, 28 min) are safer alternatives, they exceed the critical safety window. Srinagar Highway is a fast east-west link with no documented storm exposure on primary corridor.",
-      "why_brief": "A2 meets critical 20-min window; avoids 40-min Expressway delays. A3/A4 exceed failure threshold."
+      "selection_rationale": "Srinagar Highway achieves 20-minute ETA\u2014matching the blood plasma's critical 20-minute spoilage window at 29\u00b0C. It avoids both the blocked Murree Rd corridor and the 40-minute traffic delays on Expressway/GT Road.",
+      "database_simulation_payload": {
+        "shipment_id": "SHP-915",
+        "new_status": "Emergency Reroute",
+        "new_destination": "Holy Family Hospital",
+        "new_route": "Srinagar Highway"
+      }
     },
     "step_5_crm_update": {
       "success": true,
-      "update_timestamp": "2026-05-17T16:20:32.407604+00:00",
+      "update_timestamp": "2026-05-18T02:59:04.767740+00:00",
       "before_state": {
         "shipment_id": "SHP-915",
         "current_status": "In Transit (On Time)",
         "route_name": "Murree Rd Islamabad \u2192 Rawalpindi",
-        "route": [
-          {
-            "place": "I-9 Pharma Hub",
-            "lat": 33.652,
-            "lon": 73.042
-          },
-          {
-            "place": "Faizabad",
-            "lat": 33.663,
-            "lon": 73.078
-          },
-          {
-            "place": "Holy Family Hospital",
-            "lat": 33.582,
-            "lon": 73.041
-          }
-        ],
         "destination": "Holy Family Hospital"
       },
       "after_state": {
         "shipment_id": "SHP-915",
         "current_status": "Emergency Reroute",
         "route_name": "Srinagar Highway",
-        "route": [
-          {
-            "place": "I-9 Pharma Hub",
-            "lat": 33.652,
-            "lon": 73.042
-          },
-          {
-            "place": "Srinagar Hwy",
-            "lat": 33.698,
-            "lon": 73.112
-          },
-          {
-            "place": "Holy Family Hospital",
-            "lat": 33.582,
-            "lon": 73.041
-          }
-        ],
         "destination": "Holy Family Hospital"
-      },
-      "message": "SUCCESS: Shipment SHP-915 updated. Status: 'In Transit (On Time)' \u2192 'Emergency Reroute'. Route: 'Murree Rd Islamabad \u2192 Rawalpindi' \u2192 'Srinagar Highway'."
+      }
     },
     "step_6_notification": {
       "success": true,
-      "notification_id": "NOTIF-SHP-915-212032",
-      "timestamp": "2026-05-17T16:20:32.398886+00:00",
-      "recipient": "Holy Family Hospital Emergency Department",
+      "notification_id": "NOTIF-SHP-915-075911",
+      "timestamp": "2026-05-18T02:59:11.312855+00:00",
+      "recipient": "Holy Family Hospital Administration",
       "channels_used": [
         "email",
         "sms"
-      ],
-      "message": "NOTIFICATION SENT (simulated) to 'Holy Family Hospital Emergency Department' | ID: NOTIF-SHP-915-212032 | Urgency: IMMEDIATE"
+      ]
     }
   }
 }
