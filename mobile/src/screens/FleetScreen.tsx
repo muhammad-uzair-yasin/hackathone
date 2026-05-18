@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AnimatedFleetHero from '../components/AnimatedFleetHero';
 import GlassCard from '../components/GlassCard';
 import ScreenHeader from '../components/ScreenHeader';
 import RouteStops from '../components/RouteStops';
@@ -65,6 +66,8 @@ export default function FleetScreen({ onSelectShipment, highlightId, refreshKey 
           </View>
         }
       />
+
+      <AnimatedFleetHero highlighted={Boolean(highlightId)} />
 
       <View style={styles.statsRow}>
         <View style={styles.stat}>

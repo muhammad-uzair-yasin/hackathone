@@ -51,6 +51,19 @@
         "sms"
       ],
       "message": "URGENT ALERT: Shipment SHP-882 (Insulin, $50,000, Temperature Critical) has been emergency rerouted due to Port of Karachi strike delays. Your shipment is now diverted via M-9 Thatta Bypass with secure cold-vault handoff at Hyderabad Cold-Vault to maintain temperature integrity. New ETA: 52 minutes, within the pharmaceutical priority processing window. Cargo remains marked CRITICAL and will proceed to Liaquat Hospital, Jamshoro immediately upon cold-vault transfer. No thermal compromise. Contact: BioRoute Emergency Operations."
+    },
+    {
+      "notification_id": "NOTIF-SHP-882-100003",
+      "timestamp": "2026-05-18T05:00:03.101885+00:00",
+      "shipment_id": "SHP-882",
+      "recipient": "Liaquat University Hospital, Jamshoro Administration",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "channels": [
+        "email",
+        "sms"
+      ],
+      "message": "URGENT: Shipment SHP-882 (Insulin, $50K, Temperature Critical) has been emergency-rerouted due to N-5 National Highway blockage near Hyderabad West (multi-vehicle collision, 2\u20133 hour clearance, ambient 42\u201344\u00b0C). To protect cargo integrity within the 45-minute thermal failure window, the shipment is being diverted via M-9 Thatta Bypass with a temperature-controlled cold-vault handoff at Hyderabad Cold-Vault. Revised ETA at Liaquat Hospital: 62 minutes. Driver will contact you upon arrival at the handoff facility. Cargo remains in full compliance with chain-of-custody protocols."
     }
   ]
 }
