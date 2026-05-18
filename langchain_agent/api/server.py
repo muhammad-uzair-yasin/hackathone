@@ -416,7 +416,6 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
         "outcome": "pending",
         "called_tools": set(),
         "resulted_tools": set(),
-        "alert_text": input_text,
     }
 
     yield sse_event("CONNECTED", {
@@ -621,30 +620,19 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
                         yield summary_evt
 
                     if subagent.name == "impact-analyzer" and not result_data.get("impact_detected"):
-                        from langchain_agent.impact_rules import analyze_impact_deterministic
-
-                        corrected = analyze_impact_deterministic(
-                            session_state.get("alert_text", "")
-                        )
-                        if corrected.get("impact_detected"):
-                            result_data = corrected
-                            summary_evt = _step_summary_event(subagent.name, result_data)
-                            if summary_evt:
-                                yield summary_evt
-                        else:
-                            session_state["outcome"] = "all_clear"
-                            yield sse_event("STEP_SUMMARY", {
-                                "step": 4,
-                                "title": _STEP_TITLES[4],
-                                "agent": "orchestrator",
-                                "summary": "No reroute — no shipments on affected routes.",
-                            })
-                            yield sse_event("STEP_SUMMARY", {
-                                "step": _EXECUTION_STEP,
-                                "title": _STEP_TITLES[_EXECUTION_STEP],
-                                "agent": "orchestrator",
-                                "summary": "No CRM update — fleet remains on safe routes.",
-                            })
+                        session_state["outcome"] = "all_clear"
+                        yield sse_event("STEP_SUMMARY", {
+                            "step": 4,
+                            "title": _STEP_TITLES[4],
+                            "agent": "orchestrator",
+                            "summary": "No reroute — no shipments on affected routes.",
+                        })
+                        yield sse_event("STEP_SUMMARY", {
+                            "step": _EXECUTION_STEP,
+                            "title": _STEP_TITLES[_EXECUTION_STEP],
+                            "agent": "orchestrator",
+                            "summary": "No CRM update — fleet remains on safe routes.",
+                        })
 
                     yield sse_event("SUBAGENT_DONE", {
                         "agent": subagent.name,

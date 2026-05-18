@@ -423,22 +423,3 @@ def write_summary_tool(
     return json.dumps(result, indent=2)
 
 
-@tool
-def match_fleet_to_alert(alert_text: str) -> str:
-    """
-    Ground-truth route impact check: matches active_shipments.json to corridors/places
-    named in the alert (N-5, M-3, Murree Rd, etc.).
-
-    Call this after impact-analyzer on every hazard run. If impact_detected is true here,
-    you MUST run action-planner and update_crm_tool even if the subagent disagreed.
-
-    Args:
-        alert_text: The user's full raw news/alert message.
-
-    Returns:
-        JSON ImpactAnalysis-shaped object with impact_detected, affected_shipment_id, etc.
-    """
-    from langchain_agent.impact_rules import analyze_impact_deterministic
-
-    return json.dumps(analyze_impact_deterministic(alert_text), indent=2)
-
