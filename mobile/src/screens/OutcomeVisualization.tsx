@@ -1,5 +1,5 @@
 /**
- * Outcome — before/after from live agent run + summary.md. No mock defaults.
+ * Outcome — before/after from live agent run + summary.md
  */
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -11,9 +11,11 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '../components/GlassCard';
+import ScreenHeader from '../components/ScreenHeader';
 import ReasonMarkdownPanel from '../components/ReasonMarkdownPanel';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { FontFamily, pageStyles, Page } from '../theme';
 
 export interface ShipmentState {
   shipmentId: string;
@@ -44,37 +46,21 @@ export default function OutcomeVisualization({
   const [activeView, setActiveView] = useState<'before' | 'after'>('after');
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const pingAnim = useRef(new Animated.Value(1)).current;
 
   const hasData = Boolean(beforeState || afterState);
   const showAfter = Boolean(afterState);
-
-  useEffect(() => {
-    if (!showAfter) return;
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pingAnim, { toValue: 2, duration: 800, useNativeDriver: true }),
-        Animated.timing(pingAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      ])
-    ).start();
-  }, [showAfter, pingAnim]);
 
   const toggleView = (view: 'before' | 'after') => {
     if (view === 'after' && !afterState) return;
     if (view === 'before' && !beforeState) return;
     Animated.sequence([
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(scaleAnim, { toValue: 0.95, duration: 200, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(scaleAnim, { toValue: 0.98, duration: 150, useNativeDriver: true }),
       ]),
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-          easing: Easing.out(Easing.back(1.5)),
-        }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+        Animated.timing(scaleAnim, { toValue: 1, duration: 250, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
       ]),
     ]).start();
     setActiveView(view);
@@ -82,108 +68,92 @@ export default function OutcomeVisualization({
 
   if (!hasData && !summaryMarkdown) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Outcome</Text>
-        <Text style={styles.subtitle}>Before / after fleet state from the agent run</Text>
-        <GlassCard style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>📊</Text>
+      <ScrollView style={pageStyles.screen} contentContainerStyle={pageStyles.content} showsVerticalScrollIndicator={false}>
+        <ScreenHeader
+          kicker="Outcome"
+          title="Run outcome"
+          subtitle="Before and after fleet state from the agent run"
+        />
+        <View style={[pageStyles.card, styles.empty]}>
+          <Ionicons name="analytics-outline" size={32} color="#9CA3AF" />
           <Text style={styles.emptyTitle}>No outcome yet</Text>
           <Text style={styles.emptyBody}>
-            Run the agent from the News tab. After a reroute completes, before and after shipment
-            data appears here. Use Reset on News to clear and test again.
+            Run the agent from the News tab. After a reroute completes, shipment data appears here.
           </Text>
-        </GlassCard>
-        <View style={{ height: 100 }} />
+        </View>
       </ScrollView>
     );
   }
 
   if (!hasData && summaryMarkdown) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Outcome</Text>
-        <Text style={styles.subtitle}>Why the route changed</Text>
+      <ScrollView style={pageStyles.screen} contentContainerStyle={pageStyles.content} showsVerticalScrollIndicator={false}>
+        <ScreenHeader kicker="Outcome" title="Run outcome" subtitle="Why the route changed" />
         <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} />
         {onRefreshSummary ? (
-          <TouchableOpacity onPress={onRefreshSummary} style={styles.refreshBtn}>
-            <Text style={styles.refreshText}>↻ Reload run summary (summary.md)</Text>
+          <TouchableOpacity style={pageStyles.secondaryBtn} onPress={onRefreshSummary}>
+            <Ionicons name="refresh-outline" size={16} color="#6B7280" />
+            <Text style={pageStyles.secondaryBtnText}>Reload summary</Text>
           </TouchableOpacity>
         ) : null}
-        <View style={{ height: 100 }} />
       </ScrollView>
     );
   }
 
-  const current =
-    activeView === 'before' ? beforeState! : afterState || beforeState!;
+  const current = activeView === 'before' ? beforeState! : afterState || beforeState!;
   const isBefore = activeView === 'before' || !afterState;
   const shipmentLabel = current.shipmentId.replace('SHP-', '#');
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.title}>Outcome</Text>
-      <Text style={styles.subtitle}>
-        {pipelineComplete ? 'Agent run complete' : 'Snapshot from last run'}
-      </Text>
+    <ScrollView style={pageStyles.screen} contentContainerStyle={pageStyles.content} showsVerticalScrollIndicator={false}>
+      <ScreenHeader
+        kicker="Outcome"
+        title="Run outcome"
+        subtitle={pipelineComplete ? 'Agent run complete' : 'Snapshot from last run'}
+        right={
+          pipelineComplete ? (
+            <View style={styles.doneBadge}>
+              <Ionicons name="checkmark-circle" size={14} color="#059669" />
+              <Text style={styles.doneText}>Done</Text>
+            </View>
+          ) : null
+        }
+      />
 
       {summaryMarkdown ? (
         <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} defaultOpen />
       ) : null}
 
-      <View style={styles.toggleCenter}>
-        <View style={styles.toggleContainer}>
+      <View style={styles.toggleWrap}>
+        <View style={styles.toggle}>
           <TouchableOpacity
-            style={[styles.toggleBtn, isBefore && styles.toggleBtnActive, !beforeState && styles.toggleBtnDisabled]}
+            style={[styles.toggleBtn, isBefore && styles.toggleOn]}
             onPress={() => toggleView('before')}
             disabled={!beforeState}
-            activeOpacity={0.85}
           >
-            <Text style={[styles.toggleText, isBefore && styles.toggleTextActive]}>Before</Text>
+            <Text style={[styles.toggleTxt, isBefore && styles.toggleTxtOn]}>Before</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.toggleBtn,
-              !isBefore && styles.toggleBtnActive,
-              !afterState && styles.toggleBtnDisabled,
-            ]}
+            style={[styles.toggleBtn, !isBefore && styles.toggleOn]}
             onPress={() => toggleView('after')}
             disabled={!afterState}
-            activeOpacity={0.85}
           >
-            <Text style={[styles.toggleText, !isBefore && styles.toggleTextActive]}>After</Text>
+            <Text style={[styles.toggleTxt, !isBefore && styles.toggleTxtOn]}>After</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.outcomeTitle}>Shipment {shipmentLabel}</Text>
-        <Text style={styles.outcomeSubtitle}>{current.cargo}</Text>
+        <Text style={styles.shipTitle}>Shipment {shipmentLabel}</Text>
+        <Text style={styles.shipSub}>{current.cargo}</Text>
       </View>
 
-      <Animated.View
-        style={[styles.canvasWrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
-      >
-        <GlassCard
-          style={[
-            styles.canvas,
-            isBefore ? { borderColor: `${Colors.outlineVariant}55` } : { borderColor: `${Colors.primary}30` },
-          ]}
-        >
-          {isBefore ? (
-            <View style={styles.banner}>
-              <Text style={styles.bannerLabel}>Baseline (before agent)</Text>
-            </View>
-          ) : (
-            <View style={[styles.banner, styles.bannerAfter]}>
-              <Text style={styles.bannerLabelAfter}>After agent / route updated</Text>
-              {showAfter ? (
-                <Animated.View style={[styles.pingDot, { transform: [{ scale: pingAnim }] }]} />
-              ) : null}
-            </View>
-          )}
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
+        <GlassCard style={styles.detailCard}>
+          <View style={[styles.tag, isBefore ? styles.tagBefore : styles.tagAfter]}>
+            <Text style={[styles.tagTxt, !isBefore && styles.tagTxtAfter]}>
+              {isBefore ? 'Baseline' : 'After agent'}
+            </Text>
+          </View>
 
-          <View style={styles.stateGrid}>
+          <View style={styles.grid}>
             <StateRow label="Shipment" value={current.shipmentId} />
             <StateRow label="Cargo" value={current.cargo} />
             <StateRow label="Route" value={current.route} />
@@ -191,36 +161,36 @@ export default function OutcomeVisualization({
             <StateRow
               label="Status"
               value={current.status}
-              valueColor={/reroute/i.test(current.status) ? Colors.error : '#16a34a'}
+              highlight={/reroute/i.test(current.status) ? '#DC2626' : '#059669'}
             />
             {current.temp !== '—' ? <StateRow label="Temperature" value={current.temp} /> : null}
           </View>
 
           {!isBefore && /reroute/i.test(current.status) ? (
-            <View style={styles.rerouteBanner}>
-              <Text style={styles.rerouteIcon}>✓</Text>
-              <View>
-                <Text style={styles.rerouteTitle}>Emergency reroute applied</Text>
-                <Text style={styles.rerouteDetail}>Route updated by orchestrator</Text>
-              </View>
+            <View style={styles.reroute}>
+              <Ionicons name="checkmark-circle" size={18} color="#059669" />
+              <Text style={styles.rerouteTxt}>Emergency reroute applied</Text>
             </View>
           ) : null}
         </GlassCard>
       </Animated.View>
 
-      {!afterState ? (
-        <Text style={styles.waitingAfter}>
-          “After” view appears when the agent updates the route or finishes analysis.
+      {!afterState && beforeState && pipelineComplete ? (
+        <Text style={styles.waiting}>
+          No fleet changes this run — the agent finished analysis without an emergency reroute.
         </Text>
+      ) : !afterState ? (
+        <Text style={styles.waiting}>After view appears when the agent updates the route.</Text>
       ) : null}
 
       {!summaryMarkdown && onRefreshSummary ? (
-        <TouchableOpacity onPress={onRefreshSummary} style={styles.refreshBtn}>
-          <Text style={styles.refreshText}>Load run summary (summary.md)</Text>
+        <TouchableOpacity style={pageStyles.secondaryBtn} onPress={onRefreshSummary}>
+          <Ionicons name="document-text-outline" size={16} color="#6B7280" />
+          <Text style={pageStyles.secondaryBtnText}>Load summary</Text>
         </TouchableOpacity>
       ) : null}
 
-      <View style={{ height: 100 }} />
+      <View style={{ height: 16 }} />
     </ScrollView>
   );
 }
@@ -228,97 +198,103 @@ export default function OutcomeVisualization({
 function StateRow({
   label,
   value,
-  valueColor,
+  highlight,
 }: {
   label: string;
   value: string;
-  valueColor?: string;
+  highlight?: string;
 }) {
   return (
-    <View style={styles.stateRow}>
-      <Text style={styles.stateLabel}>{label}</Text>
-      <Text style={[styles.stateValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
+    <View style={styles.row}>
+      <Text style={styles.rowLbl}>{label}</Text>
+      <Text style={[styles.rowVal, highlight ? { color: highlight } : null]} numberOfLines={2}>
+        {value}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
-
-  title: { ...Typography.headlineMD, color: Colors.onSurface },
-  subtitle: { ...Typography.bodySM, color: Colors.onSurfaceVariant, marginBottom: Spacing.lg },
-
-  emptyCard: { padding: Spacing.xl, alignItems: 'center' },
-  emptyIcon: { fontSize: 40, marginBottom: Spacing.md },
-  emptyTitle: { ...Typography.bodyMD, fontWeight: '700', color: Colors.onSurface, marginBottom: Spacing.sm },
-  emptyBody: { ...Typography.bodySM, color: Colors.onSurfaceVariant, textAlign: 'center', lineHeight: 20 },
-
-  toggleCenter: { alignItems: 'center', marginBottom: Spacing.lg },
-  toggleContainer: {
-    flexDirection: 'row',
-    padding: 4,
-    backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.md,
+  empty: { alignItems: 'center', paddingVertical: 28 },
+  emptyTitle: { fontFamily: FontFamily.semiBold, fontSize: 16, color: '#111827', marginTop: 12 },
+  emptyBody: {
+    fontFamily: FontFamily.regular,
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 21,
   },
-  toggleBtn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: BorderRadius.sm },
-  toggleBtnActive: { backgroundColor: Colors.primary },
-  toggleBtnDisabled: { opacity: 0.4 },
-  toggleText: { ...Typography.labelMD, color: Colors.onSurfaceVariant },
-  toggleTextActive: { color: Colors.onPrimary },
-  outcomeTitle: { ...Typography.headlineSM, color: Colors.onSurface, textAlign: 'center' },
-  outcomeSubtitle: { ...Typography.bodySM, color: Colors.onSurfaceVariant, textAlign: 'center' },
-
-  canvasWrapper: { marginBottom: Spacing.md },
-  canvas: { padding: Spacing.lg, borderWidth: 1 },
-  banner: {
+  doneBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  doneText: { fontFamily: FontFamily.semiBold, fontSize: 10, color: '#059669' },
+  toggleWrap: { alignItems: 'center', marginBottom: 16 },
+  toggle: {
+    flexDirection: 'row',
+    padding: 3,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  toggleBtn: { paddingHorizontal: 22, paddingVertical: 8, borderRadius: 8 },
+  toggleOn: { backgroundColor: '#FFF' },
+  toggleTxt: { fontFamily: FontFamily.medium, fontSize: 13, color: '#6B7280' },
+  toggleTxtOn: { fontFamily: FontFamily.semiBold, color: Page.primary },
+  shipTitle: { fontFamily: FontFamily.semiBold, fontSize: 16, color: '#111827' },
+  shipSub: { fontFamily: FontFamily.regular, fontSize: 14, color: '#6B7280', marginTop: 2 },
+  detailCard: { padding: 16, marginBottom: 12 },
+  tag: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: Colors.surfaceContainerLow,
-    marginBottom: Spacing.md,
+    marginBottom: 12,
   },
-  bannerAfter: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: `${Colors.primary}15` },
-  bannerLabel: { ...Typography.labelSM, color: Colors.outline },
-  bannerLabelAfter: { ...Typography.labelSM, color: Colors.primary, fontWeight: '700' },
-  pingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary },
-
-  stateGrid: { gap: Spacing.xs },
-  stateRow: {
+  tagBefore: { backgroundColor: '#F3F4F6' },
+  tagAfter: { backgroundColor: '#EFF6FF' },
+  tagTxt: { fontFamily: FontFamily.semiBold, fontSize: 11, color: '#6B7280' },
+  tagTxtAfter: { color: Page.primary },
+  grid: { gap: 0 },
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: `${Colors.outlineVariant}33`,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Page.border,
   },
-  stateLabel: { ...Typography.labelMD, color: Colors.outline },
-  stateValue: { ...Typography.bodySM, color: Colors.onSurface, fontWeight: '600', flex: 1, textAlign: 'right' },
-
-  rerouteBanner: {
+  rowLbl: { fontFamily: FontFamily.medium, fontSize: 13, color: '#6B7280' },
+  rowVal: {
+    fontFamily: FontFamily.semiBold,
+    fontSize: 14,
+    color: '#111827',
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 12,
+  },
+  reroute: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: `${Colors.primary}10`,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    marginTop: Spacing.md,
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Page.border,
   },
-  rerouteIcon: { fontSize: 20, color: Colors.primary },
-  rerouteTitle: { ...Typography.labelMD, color: Colors.primary },
-  rerouteDetail: { ...Typography.bodySM, color: Colors.onSurfaceVariant },
-  waitingAfter: {
-    ...Typography.bodySM,
-    color: Colors.outline,
+  rerouteTxt: { fontFamily: FontFamily.semiBold, fontSize: 13, color: '#059669' },
+  waiting: {
+    fontFamily: FontFamily.regular,
+    fontSize: 13,
+    color: '#9CA3AF',
     textAlign: 'center',
-    fontStyle: 'italic',
-    marginBottom: Spacing.lg,
+    marginBottom: 12,
   },
-  refreshBtn: {
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  refreshText: { ...Typography.labelMD, color: Colors.primary },
 });

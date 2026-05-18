@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import GlassCard from './GlassCard';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { FontFamily, Page } from '../theme';
 
 interface Props {
   markdown: string;
@@ -9,7 +10,6 @@ interface Props {
   defaultOpen?: boolean;
 }
 
-/** Lightweight markdown-ish view (no extra deps) */
 function MarkdownBody({ text }: { text: string }) {
   const lines = text.split('\n');
 
@@ -63,7 +63,6 @@ function stripBold(s: string): string {
   return s.replace(/\*\*([^*]+)\*\*/g, '$1');
 }
 
-/** Displays the agent run summary from summary.md (not reason.md). */
 export default function ReasonMarkdownPanel({
   markdown,
   fileName = 'summary.md',
@@ -73,12 +72,15 @@ export default function ReasonMarkdownPanel({
 
   return (
     <GlassCard style={styles.wrap}>
-      <TouchableOpacity style={styles.header} onPress={() => setOpen((o) => !o)} activeOpacity={0.8}>
-        <View>
-          <Text style={styles.label}>Why the route changed</Text>
-          <Text style={styles.file}>{fileName}</Text>
+      <TouchableOpacity style={styles.header} onPress={() => setOpen((o) => !o)} activeOpacity={0.7}>
+        <View style={styles.headerLeft}>
+          <Ionicons name="document-text-outline" size={18} color={Page.primary} />
+          <View>
+            <Text style={styles.label}>Run summary</Text>
+            <Text style={styles.file}>{fileName}</Text>
+          </View>
         </View>
-        <Text style={styles.chevron}>{open ? '▼' : '▶'}</Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color="#9CA3AF" />
       </TouchableOpacity>
       {open ? (
         <ScrollView style={styles.scroll} nestedScrollEnabled>
@@ -90,21 +92,23 @@ export default function ReasonMarkdownPanel({
 }
 
 const styles = StyleSheet.create({
-  wrap: { padding: 0, marginBottom: Spacing.md, overflow: 'hidden' },
+  wrap: { marginBottom: 16, padding: 0 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: Spacing.md,
-    backgroundColor: `${Colors.primary}10`,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Page.border,
+    gap: 10,
   },
-  label: { ...Typography.labelMD, color: Colors.primary, textTransform: 'uppercase' },
-  file: { ...Typography.bodySM, color: Colors.onSurfaceVariant, marginTop: 2 },
-  chevron: { color: Colors.outline, fontSize: 12 },
-  scroll: { maxHeight: 420, paddingHorizontal: Spacing.md, paddingBottom: Spacing.md },
-  h1: { ...Typography.headlineSM, color: Colors.onSurface, marginTop: Spacing.sm, marginBottom: Spacing.xs },
-  h2: { ...Typography.bodyMD, fontWeight: '700', color: Colors.onSurface, marginTop: Spacing.md, marginBottom: 4 },
-  h3: { ...Typography.labelMD, fontWeight: '700', color: Colors.primary, marginTop: Spacing.sm, marginBottom: 2 },
-  p: { ...Typography.bodySM, color: Colors.onSurface, lineHeight: 20, marginBottom: 4 },
-  bullet: { ...Typography.bodySM, color: Colors.onSurfaceVariant, lineHeight: 20, marginLeft: 4, marginBottom: 2 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  label: { fontFamily: FontFamily.semiBold, fontSize: 14, color: '#111827' },
+  file: { fontFamily: FontFamily.regular, fontSize: 12, color: '#6B7280', marginTop: 2 },
+  scroll: { maxHeight: 400, padding: 16 },
+  h1: { fontFamily: FontFamily.bold, fontSize: 17, color: '#111827', marginBottom: 6 },
+  h2: { fontFamily: FontFamily.semiBold, fontSize: 15, color: '#111827', marginTop: 12, marginBottom: 4 },
+  h3: { fontFamily: FontFamily.semiBold, fontSize: 13, color: Page.primary, marginTop: 8 },
+  p: { fontFamily: FontFamily.regular, fontSize: 14, color: '#374151', lineHeight: 21, marginBottom: 4 },
+  bullet: { fontFamily: FontFamily.regular, fontSize: 14, color: '#6B7280', lineHeight: 21, marginLeft: 4 },
 });

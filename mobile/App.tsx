@@ -1,13 +1,22 @@
 /**
- * BioRoute Cold-Chain — Mobile app (multi-screen)
- *
- * News  → user picks alert input
- * Fleet → routes & shipment detail
- * Agent → live todos + agents (SSE)
- * Outcome → before / after fleet state + summary.md
+ * Logistics Agent — Mobile app
  */
 import React, { useEffect, useState } from 'react';
-import { Alert, SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 import BottomTabBar, { TabName } from './src/components/BottomTabBar';
 import { useAgentStream } from './src/hooks/useAgentStream';
@@ -20,6 +29,13 @@ import type { Shipment } from './src/types/shipment';
 import { Colors } from './src/theme';
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
   const [activeTab, setActiveTab] = useState<TabName>('News');
   const [detailShipment, setDetailShipment] = useState<Shipment | null>(null);
   const [fleetRefreshKey, setFleetRefreshKey] = useState(0);
@@ -70,10 +86,18 @@ export default function App() {
     }
   }, [activeTab, pipelinePhase, loadSummary]);
 
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.fontLoader}>
+        <ActivityIndicator size="large" color={Colors.accentPurple} />
+      </View>
+    );
+  }
+
   if (detailShipment) {
     return (
       <SafeAreaView style={styles.root}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.pageBackground} />
         <ShipmentDetailScreen
           shipment={detailShipment}
           onClose={() => setDetailShipment(null)}
@@ -162,7 +186,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.pageBackground} />
       <View style={styles.body}>{renderScreen()}</View>
       <BottomTabBar activeTab={activeTab} onTabPress={setActiveTab} />
     </SafeAreaView>
@@ -170,6 +194,12 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
+  fontLoader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.pageBackground,
+  },
+  root: { flex: 1, backgroundColor: Colors.pageBackground },
   body: { flex: 1 },
 });

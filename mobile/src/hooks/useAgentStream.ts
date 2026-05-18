@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   streamAnalyzePost,
+  fetchBaselineShipments,
   fetchDbShipments,
   fetchSummaryDocument,
   resetDemoSession,
@@ -36,6 +37,25 @@ function snapshotFromShipments(ships: Shipment[], id?: string): OutcomeSnapshot 
   };
 }
 
+function snapshotFromCrmState(state: Record<string, unknown>, cargo = '—'): OutcomeSnapshot {
+  return {
+    shipmentId: String(state.shipment_id || ''),
+    cargo,
+    route: String(state.route_name || ''),
+    destination: String(state.destination || ''),
+    status: String(state.current_status || ''),
+  };
+}
+
+function snapshotsEqual(a: OutcomeSnapshot, b: OutcomeSnapshot): boolean {
+  return (
+    a.shipmentId === b.shipmentId &&
+    a.status === b.status &&
+    a.route === b.route &&
+    a.destination === b.destination
+  );
+}
+
 function normalizeTodos(raw: unknown[]): OrchestratorTodo[] {
   return raw.map((item, i) => {
     const o = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>;
@@ -67,6 +87,8 @@ export function useAgentStream() {
   const [subagentNotices, setSubagentNotices] = useState<SubagentStartNotice[]>([]);
   const seqRef = useRef(0);
   const completeReceivedRef = useRef(false);
+  const outcomeHandledRef = useRef(false);
+  const completedExecutionToolsRef = useRef<Set<string>>(new Set());
 
   const loadSummary = useCallback(async () => {
     const doc = await fetchSummaryDocument();
@@ -180,6 +202,7 @@ export function useAgentStream() {
 
   const finishExecutionTool = useCallback(
     (tool: string, result?: Record<string, unknown>) => {
+      completedExecutionToolsRef.current.add(tool);
       const msg = String(result?.message || 'Complete');
       upsertActivity(tool, {
         label: labelForAgent(tool),
@@ -211,22 +234,27 @@ export function useAgentStream() {
     setTodos((prev) => prev.map((t) => ({ ...t, status: 'completed' as const })));
   }, []);
 
-  const finishPendingExecutionTools = useCallback(() => {
-    for (const tool of EXECUTION_TOOLS) {
-      upsertActivity(tool, {
-        label: labelForAgent(tool),
-        status: 'done',
-        expanded: false,
-        what:
-          tool === 'update_crm_tool'
-            ? 'Route updated'
-            : tool === 'notify_tool'
-              ? 'Hospital notified'
-              : 'Summary saved',
-      });
-      setTodoStatus(tool, 'completed');
-    }
-  }, [setTodoStatus, upsertActivity]);
+  const finalizeExecutionToolsOnComplete = useCallback(
+    (crmUpdated: boolean, outcome: string) => {
+      const skipMsg =
+        outcome === 'all_clear'
+          ? 'Not required — no affected shipments'
+          : crmUpdated
+            ? 'Not run this session'
+            : 'Not run — analysis finished without a route change';
+
+      setActivities((prev) =>
+        prev.map((a) => {
+          if (!EXECUTION_TOOLS.has(a.id) || completedExecutionToolsRef.current.has(a.id)) {
+            return a;
+          }
+          if (a.status !== 'active' && a.status !== 'pending') return a;
+          return { ...a, status: 'error' as const, what: skipMsg, expanded: false };
+        })
+      );
+    },
+    []
+  );
 
   const applyAgentResult = useCallback(
     (agent: string, result: Record<string, unknown>, summary?: string) => {
@@ -508,8 +536,17 @@ export function useAgentStream() {
         const tool = event.tool_name as string;
         const ok = event.status === 'SUCCESS';
         const result = event.result as Record<string, unknown> | undefined;
-        if (ok && EXECUTION_TOOLS.has(tool)) {
-          finishExecutionTool(tool, result);
+        if (EXECUTION_TOOLS.has(tool)) {
+          if (ok) {
+            finishExecutionTool(tool, result);
+          } else {
+            upsertActivity(tool, {
+              label: labelForAgent(tool),
+              status: 'error',
+              what: String(result?.message || event.error || 'Failed'),
+              expanded: false,
+            });
+          }
           return;
         }
         appendTimeline({
@@ -540,20 +577,48 @@ export function useAgentStream() {
 
       if (type === 'COMPLETE') {
         completeReceivedRef.current = true;
-        const ships = event.current_shipments as { active_shipments?: Record<string, unknown>[] } | undefined;
-        if (ships?.active_shipments) {
-          const mapped = ships.active_shipments.map((s) => mapShipment(s));
-          setOutcomeAfter(snapshotFromShipments(mapped, affectedIdRef.current || undefined));
+        outcomeHandledRef.current = true;
+        const crmUpdated = Boolean(event.crm_updated);
+        const outcome = String(event.outcome || 'completed');
+        const beforeAfter = event.before_after as
+          | { shipment_id?: string; before?: Record<string, unknown>; after?: Record<string, unknown> }
+          | undefined;
+
+        if (crmUpdated && beforeAfter?.before && beforeAfter?.after) {
+          const cargo =
+            outcomeBefore?.cargo ||
+            String(beforeAfter.before.cargo_type || beforeAfter.after.cargo_type || '—');
+          setOutcomeBefore(snapshotFromCrmState(beforeAfter.before, cargo));
+          setOutcomeAfter(snapshotFromCrmState(beforeAfter.after, cargo));
+        } else {
+          const ships = event.current_shipments as { active_shipments?: Record<string, unknown>[] } | undefined;
+          if (ships?.active_shipments) {
+            const mapped = ships.active_shipments.map((s) => mapShipment(s));
+            const after = snapshotFromShipments(mapped, affectedIdRef.current || undefined);
+            if (after && outcomeBefore && snapshotsEqual(outcomeBefore, after) && !crmUpdated) {
+              setOutcomeAfter(null);
+            } else if (after) {
+              setOutcomeAfter(after);
+            }
+          } else if (!crmUpdated) {
+            setOutcomeAfter(null);
+          }
         }
+
         finalizePipeline();
-        finishPendingExecutionTools();
+        finalizeExecutionToolsOnComplete(crmUpdated, outcome);
         setPipelinePhase('complete');
         const msg = String(event.message || 'Pipeline complete');
         setStatusLine(msg);
+        const completeTitle = crmUpdated
+          ? 'Reroute complete'
+          : outcome === 'all_clear'
+            ? 'All clear'
+            : 'Analysis complete';
         appendTimeline({
           kind: 'complete',
           ts,
-          title: 'Pipeline complete',
+          title: completeTitle,
           body: msg,
           status: 'done',
         });
@@ -573,8 +638,9 @@ export function useAgentStream() {
       applyAgentResult,
       clearTimelineKey,
       finishExecutionTool,
-      finishPendingExecutionTools,
+      finalizeExecutionToolsOnComplete,
       finalizePipeline,
+      outcomeBefore,
       loadSummary,
       setTodoStatus,
       showSubagentNotice,
@@ -618,13 +684,15 @@ export function useAgentStream() {
       setSubagentNotices([]);
       seqRef.current = 0;
       completeReceivedRef.current = false;
+      outcomeHandledRef.current = false;
+      completedExecutionToolsRef.current = new Set();
       setPipelinePhase('running');
       setStatusLine('Starting orchestrator…');
       setOutcomeAfter(null);
       setSummaryDoc(null);
 
-      const dbBefore = await fetchDbShipments();
-      const before = snapshotFromShipments(dbBefore);
+      const baseline = await fetchBaselineShipments();
+      const before = snapshotFromShipments(baseline);
       setOutcomeBefore(before);
       if (before) setAffected(before.shipmentId);
 
@@ -641,8 +709,9 @@ export function useAgentStream() {
             onDone: () => {
               if (!completeReceivedRef.current) {
                 finalizePipeline();
-                finishPendingExecutionTools();
+                finalizeExecutionToolsOnComplete(false, 'completed');
                 setPipelinePhase((p) => (p === 'running' ? 'complete' : p));
+                setStatusLine('Connection ended before pipeline finished.');
               }
               completeReceivedRef.current = false;
               resolve();
@@ -658,12 +727,26 @@ export function useAgentStream() {
         appendTimeline({ kind: 'error', title: 'Connection failed', body: msg, status: 'error' });
       } finally {
         setIsAnalyzing(false);
-        const dbAfter = await fetchDbShipments();
-        const after = snapshotFromShipments(dbAfter, affectedIdRef.current || undefined);
-        if (after) setOutcomeAfter(after);
+        if (!outcomeHandledRef.current) {
+          const dbAfter = await fetchDbShipments();
+          const after = snapshotFromShipments(dbAfter, affectedIdRef.current || undefined);
+          if (after && outcomeBefore && snapshotsEqual(outcomeBefore, after)) {
+            setOutcomeAfter(null);
+          } else if (after) {
+            setOutcomeAfter(after);
+          }
+        }
       }
     },
-    [appendTimeline, finalizePipeline, finishPendingExecutionTools, handleEvent, setAffected, upsertActivity]
+    [
+      appendTimeline,
+      finalizeExecutionToolsOnComplete,
+      finalizePipeline,
+      handleEvent,
+      outcomeBefore,
+      setAffected,
+      upsertActivity,
+    ]
   );
 
   const toggleActivity = useCallback((id: string) => {
@@ -687,6 +770,8 @@ export function useAgentStream() {
       setStatusLine('');
       setOutcomeBefore(null);
       setOutcomeAfter(null);
+      outcomeHandledRef.current = false;
+      completedExecutionToolsRef.current = new Set();
       setAffected(null);
       affectedIdRef.current = null;
       setSummaryDoc(null);

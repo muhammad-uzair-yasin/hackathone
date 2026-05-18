@@ -1,20 +1,30 @@
 {
   "notifications": [
     {
-      "notification_id": "NOTIF-SHP-882-161707",
-      "timestamp": "2026-05-17T11:17:07.988531+00:00",
+      "notification_id": "NOTIF-SHP-882-183651",
+      "timestamp": "2026-05-17T13:36:51.286025+00:00",
       "shipment_id": "SHP-882",
-      "recipient": "BioRoute Driver SHP-882",
+      "recipient": "Liaquat University Hospital Administration",
       "urgency_level": "IMMEDIATE",
       "status": "SENT (simulated)",
       "channels": [
         "email",
         "sms"
       ],
-      "message": "REROUTE INSTRUCTION: N-5 near Gharo is FLOODED and CLOSED (minimum 90 minutes). DO NOT attempt to cross. Your new route: M-9 Thatta Bypass. Navigate to Hyderabad Cold-Vault (25.401\u00b0N, 68.342\u00b0E) for mandatory cold-chain inspection under current 38\u00b0C heat. Your insulin cargo is temperature-critical (45-minute failure window). Proceed IMMEDIATELY to M-9. Contact dispatch if blocked or delayed: dispatch@bioroute.pk. Revised ETA: 52 minutes to vault."
-    }
-  ]
-} shipment at unconditioned facility. Contact BioRoute Dispatch (dispatch@bioroute.pk) immediately with any delays. Reroute initiated at 2024-12-19 14:XX UTC."
+      "message": "URGENT REROUTE ALERT: Insulin shipment SHP-882 (50,000 USD cold-chain cargo) diverted from N-5 due to multi-vehicle collision blocking all lanes near Hyderabad West Bypass. Ambient temp 42\u201344\u00b0C threatened spoilage. Now en route via M-9 Thatta Bypass with emergency cold-vault support. Revised ETA 52 minutes. Please prepare receiving dock. Driver contact: dispatch center."
+    },
+    {
+      "notification_id": "NOTIF-SHP-915-212032",
+      "timestamp": "2026-05-17T16:20:32.398886+00:00",
+      "shipment_id": "SHP-915",
+      "recipient": "Holy Family Hospital Emergency Department",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "channels": [
+        "email",
+        "sms"
+      ],
+      "message": "URGENT: Blood Plasma shipment SHP-915 ($120,000, Ultra-Critical) rerouted due to Murree Road closure from severe storm. Severe winds (85 km/h), zero visibility, and flipped refrigerated truck have shut down the primary corridor. Shipment now rerouted to Srinagar Highway for 20-minute ETA (within 20-minute plasma integrity threshold). Truck is en route now. Contact BioRoute Emergency Line for updates."
     }
   ]
 }

@@ -68,6 +68,23 @@ export const Colors = {
   // Gradients helpers
   gradientStart: '#0058bc',
   gradientEnd: '#0070eb',
+
+  // Logistics Agent UI
+  pageBackground: '#F9FAFB',
+  cardBackground: '#FFFFFF',
+  textPrimary: '#111827',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  accentBlue: '#3B82F6',
+  accentBlueBright: '#2D79FF',
+  accentPurple: '#8B5CF6',
+  accentPurpleDeep: '#7B42F6',
+  success: '#10B981',
+  borderLight: '#E5E7EB',
+  iconPurpleBg: '#EDE9FE',
+  iconBlueBg: '#DBEAFE',
+  iconGreenBg: '#D1FAE5',
+  versionTagBg: '#DBEAFE',
 };
 
 export type ColorKey = keyof typeof Colors;

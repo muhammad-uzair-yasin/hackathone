@@ -1,12 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { FontFamily, pageStyles } from '../theme';
 import type { OrchestratorTodo } from '../types/agent';
 
-function todoIcon(status: OrchestratorTodo['status']): string {
-  if (status === 'completed') return '✓';
-  if (status === 'in_progress') return '◉';
-  return '○';
+function TodoIcon({ status }: { status: OrchestratorTodo['status'] }) {
+  if (status === 'completed') {
+    return <Ionicons name="checkmark-circle" size={18} color="#059669" />;
+  }
+  if (status === 'in_progress') {
+    return <Ionicons name="ellipse" size={18} color="#2563EB" />;
+  }
+  return <Ionicons name="ellipse-outline" size={18} color="#9CA3AF" />;
 }
 
 interface Props {
@@ -18,27 +23,19 @@ export default function OrchestratorTodoList({ todos, waiting }: Props) {
   if (!todos.length && !waiting) return null;
 
   return (
-    <View style={styles.wrap}>
+    <View style={pageStyles.card}>
       <Text style={styles.title}>Orchestrator plan</Text>
       {!todos.length && waiting ? (
         <Text style={styles.waiting}>Planning steps…</Text>
       ) : (
         todos.map((t) => (
           <View key={t.id} style={styles.row}>
-            <Text
-              style={[
-                styles.icon,
-                t.status === 'completed' && styles.iconDone,
-                t.status === 'in_progress' && styles.iconActive,
-              ]}
-            >
-              {todoIcon(t.status)}
-            </Text>
+            <TodoIcon status={t.status} />
             <Text
               style={[
                 styles.content,
-                t.status === 'completed' && styles.contentDone,
-                t.status === 'in_progress' && styles.contentActive,
+                t.status === 'completed' && styles.done,
+                t.status === 'in_progress' && styles.active,
               ]}
             >
               {t.content}
@@ -51,21 +48,15 @@ export default function OrchestratorTodoList({ todos, waiting }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: `${Colors.outlineVariant}44`,
+  title: {
+    fontFamily: FontFamily.semiBold,
+    fontSize: 14,
+    color: '#111827',
+    marginBottom: 12,
   },
-  title: { ...Typography.labelMD, color: Colors.outline, marginBottom: Spacing.sm },
-  waiting: { ...Typography.bodySM, color: Colors.onSurfaceVariant, fontStyle: 'italic' },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, marginBottom: Spacing.xs },
-  icon: { fontSize: 12, color: Colors.outline, marginTop: 2, width: 16 },
-  iconActive: { color: Colors.primary },
-  iconDone: { color: '#059669' },
-  content: { ...Typography.bodySM, color: Colors.onSurface, flex: 1 },
-  contentActive: { color: Colors.primary, fontWeight: '600' },
-  contentDone: { color: Colors.onSurfaceVariant, textDecorationLine: 'line-through' },
+  waiting: { fontFamily: FontFamily.regular, fontSize: 14, color: '#6B7280' },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
+  content: { flex: 1, fontFamily: FontFamily.regular, fontSize: 14, lineHeight: 20, color: '#111827' },
+  active: { fontFamily: FontFamily.semiBold, color: '#2563EB' },
+  done: { color: '#6B7280', textDecorationLine: 'line-through' },
 });

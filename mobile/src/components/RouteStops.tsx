@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, Spacing } from '../theme';
+import { FontFamily } from '../theme';
 import type { RoutePoint } from '../types/shipment';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
   accent?: string;
 }
 
-export default function RouteStops({ stops, label, accent = Colors.primary }: Props) {
+export default function RouteStops({ stops, label, accent = '#2563EB' }: Props) {
   if (!stops?.length) return null;
 
   return (
@@ -28,16 +28,16 @@ export default function RouteStops({ stops, label, accent = Colors.primary }: Pr
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: Spacing.sm },
-  label: { ...Typography.labelMD, color: Colors.outline, marginBottom: Spacing.xs },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  wrap: { gap: 6 },
+  label: { fontFamily: FontFamily.medium, fontSize: 11, color: '#6B7280', marginBottom: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotNum: { fontSize: 10, fontWeight: '700', color: Colors.white },
-  place: { ...Typography.bodySM, color: Colors.onSurface, flex: 1 },
+  dotNum: { fontFamily: FontFamily.bold, fontSize: 9, color: '#FFF' },
+  place: { fontFamily: FontFamily.regular, fontSize: 13, color: '#111827', flex: 1 },
 });

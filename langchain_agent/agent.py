@@ -16,7 +16,12 @@ from langchain_agent.schemas import (
     HazardExtraction,
     ImpactAnalysis,
 )
-from langchain_agent.tools import notify_tool, update_crm_tool, write_summary_tool
+from langchain_agent.tools import (
+    match_fleet_to_alert,
+    notify_tool,
+    update_crm_tool,
+    write_summary_tool,
+)
 from .llm import claude_fast
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -90,9 +95,15 @@ Read the rough news alert yourself. Decide which shipment(s) are affected and wh
 ## Matching
 From the news, infer blocked routes and places. Match against shipment route_name, route stops, and alternatives.
 
+## Examples (demo fleet)
+- N-5 flood/block at Gharo/Hyderabad + SHP-882 on "N-5 Karachi → Jamshoro" → impact_detected TRUE
+- M-3 issues only → SHP-901 may match; SHP-882 on N-5 is NOT affected
+- Murree Rd storm → SHP-915 matches; Karachi N-5 shipments do not
+
 ## Rules
 - Name unaffected shipments in unaffected_shipment_ids.
 - Pick highest-risk shipment as affected_shipment_id.
+- If insulin/plasma is on a blocked N-5 corridor, impact_detected MUST be true.
 - Output ONLY valid JSON.
 """
 
@@ -190,8 +201,9 @@ Always keep the user's FULL RAW ALERT TEXT (the original news message).
 2. task('hazard-extractor', paste FULL raw alert text only)
 3. If hazard_detected: task('fleet-scout', paste FULL raw alert text only)
 4. If hazard_detected: task('impact-analyzer', paste FULL raw alert text, then fleet-scout JSON — no hazard JSON)
-5. If impact_detected AND (requires_immediate_action OR risk_level HIGH/CRITICAL):
-   task('action-planner', paste FULL raw alert text + impact-analyzer JSON — no hazard JSON)
+4b. REQUIRED: match_fleet_to_alert(FULL raw alert text) — authoritative impact_detected
+5. If match_fleet_to_alert OR impact-analyzer shows impact_detected (use match_fleet when they disagree):
+   task('action-planner', paste FULL raw alert + best impact JSON — no hazard JSON)
 6. If action urgency IMMEDIATE or SOON: update_crm_tool (updates route in fleet DB) then notify_tool
 7. write_summary_tool last — short plain-English summary (3–6 sentences) for summary.md:
    what the alert said, what you found, what action you took (or all clear).
@@ -235,7 +247,7 @@ def build_agent():
     return create_deep_agent(
         model=claude_fast,
         name="bioroute-orchestrator",
-        tools=[update_crm_tool, notify_tool, write_summary_tool],
+        tools=[match_fleet_to_alert, update_crm_tool, notify_tool, write_summary_tool],
         subagents=SUBAGENTS,
         system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
         middleware=MIDDLEWARE,

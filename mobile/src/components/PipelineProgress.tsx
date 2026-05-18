@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { FontFamily, pageStyles, Page } from '../theme';
 import type { PipelinePhase } from '../types/timeline';
 
 interface Props {
@@ -22,17 +22,17 @@ export default function PipelineProgress({
   agentsDone,
   agentsTotal,
 }: Props) {
-  const barColor =
-    phase === 'error' ? Colors.error : phase === 'complete' ? '#059669' : Colors.primary;
+  const fillColor =
+    phase === 'error' ? '#DC2626' : phase === 'complete' ? '#059669' : Page.primary;
 
   return (
-    <View style={styles.wrap}>
+    <View style={pageStyles.card}>
       <View style={styles.row}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.pct}>{Math.round(percent)}%</Text>
       </View>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${Math.min(100, percent)}%`, backgroundColor: barColor }]} />
+        <View style={[styles.fill, { width: `${Math.min(100, percent)}%`, backgroundColor: fillColor }]} />
       </View>
       <Text style={styles.meta}>
         Plan {todosDone}/{todosTotal || '—'} · Agents {agentsDone}/{agentsTotal || '—'}
@@ -42,21 +42,15 @@ export default function PipelineProgress({
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.xs },
-  label: { ...Typography.bodySM, color: Colors.onSurface, fontWeight: '600', flex: 1 },
-  pct: { ...Typography.labelMD, color: Colors.primary, fontWeight: '700' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  label: { fontFamily: FontFamily.semiBold, fontSize: 14, color: '#111827', flex: 1 },
+  pct: { fontFamily: FontFamily.bold, fontSize: 14, color: Page.primary },
   track: {
     height: 6,
-    backgroundColor: `${Colors.outlineVariant}66`,
+    backgroundColor: '#F3F4F6',
     borderRadius: 3,
     overflow: 'hidden',
   },
   fill: { height: '100%', borderRadius: 3 },
-  meta: { ...Typography.labelMD, color: Colors.outline, marginTop: Spacing.xs },
+  meta: { fontFamily: FontFamily.regular, fontSize: 12, color: '#6B7280', marginTop: 10 },
 });

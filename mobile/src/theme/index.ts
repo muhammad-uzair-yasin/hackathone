@@ -1,5 +1,7 @@
 export { Colors } from './colors';
 export type { ColorKey } from './colors';
+export { FontFamily } from './fonts';
+export { Page, pageStyles } from './page';
 
 export const Typography = {
   headlineXL: { fontSize: 40, lineHeight: 48, fontWeight: '700' as const, letterSpacing: -0.8 },
@@ -47,10 +49,24 @@ export const Shadows = {
     elevation: 3,
   },
   cardStrong: {
-    shadowColor: '#0058bc',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
     elevation: 6,
+  },
+  cardElevated: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  cardElevatedLg: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
 };

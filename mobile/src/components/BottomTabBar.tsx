@@ -1,20 +1,40 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Colors, Typography, BorderRadius } from '../theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontFamily } from '../theme';
 
 export type TabName = 'News' | 'Fleet' | 'Agent' | 'Outcome';
 
-interface Tab {
-  name: TabName;
-  label: string;
-  icon: string;
-}
+const INACTIVE = '#9CA3AF';
+const ACTIVE = '#2563EB';
 
-const TABS: Tab[] = [
-  { name: 'News', label: 'News', icon: '📰' },
-  { name: 'Fleet', label: 'Fleet', icon: '🚚' },
-  { name: 'Agent', label: 'Agent', icon: '🧠' },
-  { name: 'Outcome', label: 'Outcome', icon: '✓' },
+const TABS: { name: TabName; label: string; icon: (a: boolean) => React.ReactNode }[] = [
+  {
+    name: 'News',
+    label: 'News',
+    icon: (a) => <Ionicons name="newspaper-outline" size={22} color={a ? ACTIVE : INACTIVE} />,
+  },
+  {
+    name: 'Fleet',
+    label: 'Fleet',
+    icon: (a) => (
+      <MaterialCommunityIcons name="truck-outline" size={22} color={a ? ACTIVE : INACTIVE} />
+    ),
+  },
+  {
+    name: 'Agent',
+    label: 'Agent',
+    icon: (a) => (
+      <MaterialCommunityIcons name="head-cog-outline" size={22} color={a ? ACTIVE : INACTIVE} />
+    ),
+  },
+  {
+    name: 'Outcome',
+    label: 'Outcome',
+    icon: (a) => (
+      <Ionicons name="checkmark-circle-outline" size={22} color={a ? ACTIVE : INACTIVE} />
+    ),
+  },
 ];
 
 interface Props {
@@ -24,18 +44,19 @@ interface Props {
 
 export default function BottomTabBar({ activeTab, onTabPress }: Props) {
   return (
-    <View style={styles.container}>
+    <View style={styles.bar}>
       {TABS.map((tab) => {
-        const isActive = activeTab === tab.name;
+        const active = activeTab === tab.name;
         return (
           <TouchableOpacity
             key={tab.name}
-            style={[styles.tab, isActive && styles.tabActive]}
+            style={styles.tab}
             onPress={() => onTabPress(tab.name)}
             activeOpacity={0.7}
           >
-            <Text style={styles.icon}>{tab.icon}</Text>
-            <Text style={[styles.label, isActive && styles.labelActive]}>{tab.label}</Text>
+            {tab.icon(active)}
+            <Text style={[styles.label, active && styles.labelOn]}>{tab.label}</Text>
+            {active ? <View style={styles.mark} /> : <View style={styles.markSpacer} />}
           </TouchableOpacity>
         );
       })}
@@ -44,25 +65,28 @@ export default function BottomTabBar({ activeTab, onTabPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  bar: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.3)',
-    paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 14,
-    paddingHorizontal: 8,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 26 : 12,
   },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 6,
-    borderRadius: BorderRadius.md,
+  tab: { flex: 1, alignItems: 'center' },
+  label: {
+    fontFamily: FontFamily.medium,
+    fontSize: 11,
+    color: INACTIVE,
+    marginTop: 4,
   },
-  tabActive: { backgroundColor: `${Colors.primaryContainer}22` },
-  icon: { fontSize: 20, marginBottom: 2 },
-  label: { ...Typography.labelSM, color: Colors.outline },
-  labelActive: { color: Colors.primary, fontWeight: '700' },
+  labelOn: { fontFamily: FontFamily.semiBold, color: ACTIVE },
+  mark: {
+    width: 20,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: ACTIVE,
+    marginTop: 5,
+  },
+  markSpacer: { height: 7 },
 });

@@ -8,14 +8,16 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Scenario } from '../types/shipment';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Colors, Spacing, BorderRadius, FontFamily } from '../theme';
 
 interface Props {
   scenarios: Scenario[];
   selectedId: string | null;
   onSelect: (scenario: Scenario) => void;
   disabled?: boolean;
+  variant?: 'default' | 'embedded';
 }
 
 export default function ScenarioPicker({
@@ -23,25 +25,34 @@ export default function ScenarioPicker({
   selectedId,
   onSelect,
   disabled,
+  variant = 'default',
 }: Props) {
+  const embedded = variant === 'embedded';
   const [open, setOpen] = useState(false);
   const selected = scenarios.find((s) => s.id === selectedId);
 
   return (
     <>
       <TouchableOpacity
-        style={[styles.trigger, disabled && styles.triggerDisabled]}
+        style={[
+          styles.trigger,
+          embedded && styles.triggerEmbedded,
+          disabled && styles.triggerDisabled,
+        ]}
         onPress={() => !disabled && setOpen(true)}
         activeOpacity={0.8}
         disabled={disabled}
       >
         <View style={styles.triggerText}>
           <Text style={styles.triggerLabel}>Test scenario</Text>
-          <Text style={styles.triggerValue} numberOfLines={2}>
-            {selected ? selected.label : 'Choose a scenario to load…'}
+          <Text
+            style={[styles.triggerValue, !selected && styles.triggerPlaceholder]}
+            numberOfLines={2}
+          >
+            {selected ? selected.label : 'Choose a scenario to load...'}
           </Text>
         </View>
-        <Text style={styles.chevron}>▼</Text>
+        <Ionicons name="chevron-down" size={18} color={Colors.textMuted} />
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -87,18 +98,32 @@ const styles = StyleSheet.create({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.sm,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.outlineVariant,
-    backgroundColor: Colors.surfaceBright,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFFFFF',
     marginBottom: Spacing.md,
   },
+  triggerEmbedded: { marginBottom: 0 },
   triggerDisabled: { opacity: 0.5 },
   triggerText: { flex: 1 },
-  triggerLabel: { ...Typography.labelMD, color: Colors.outline, marginBottom: 2 },
-  triggerValue: { ...Typography.bodyMD, color: Colors.onSurface, fontWeight: '500' },
-  chevron: { fontSize: 12, color: Colors.outline, marginLeft: Spacing.sm },
+  triggerLabel: {
+    fontFamily: FontFamily.medium,
+    fontSize: 11,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  triggerValue: {
+    fontFamily: FontFamily.medium,
+    fontSize: 14,
+    color: Colors.textPrimary,
+  },
+  triggerPlaceholder: {
+    fontFamily: FontFamily.regular,
+    color: Colors.textMuted,
+  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -107,13 +132,15 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: '70%',
-    backgroundColor: Colors.surfaceBright,
+    backgroundColor: Colors.cardBackground,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
   },
   sheetTitle: {
-    ...Typography.labelMD,
-    color: Colors.outline,
+    fontFamily: FontFamily.bold,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    color: Colors.textMuted,
     marginBottom: Spacing.sm,
     textTransform: 'uppercase',
   },
@@ -124,13 +151,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: `${Colors.outlineVariant}55`,
   },
-  optionActive: { backgroundColor: `${Colors.primary}12` },
-  optionTitle: { ...Typography.bodyMD, color: Colors.onSurface, fontWeight: '600' },
-  optionMeta: { ...Typography.labelMD, color: Colors.primary, marginTop: 2 },
+  optionActive: { backgroundColor: '#EFF6FF' },
+  optionTitle: {
+    fontFamily: FontFamily.semiBold,
+    fontSize: 15,
+    color: Colors.textPrimary,
+  },
+  optionMeta: {
+    fontFamily: FontFamily.medium,
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 3,
+  },
   cancelBtn: {
     marginTop: Spacing.sm,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  cancelText: { ...Typography.labelMD, color: Colors.onSurfaceVariant },
+  cancelText: { fontFamily: FontFamily.semiBold, fontSize: 14, color: Colors.textSecondary },
 });
