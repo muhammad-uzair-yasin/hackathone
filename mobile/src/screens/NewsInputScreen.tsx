@@ -20,6 +20,7 @@ import type { Scenario } from '../types/shipment';
 import { Colors, FontFamily } from '../theme';
 
 const GLOBE_IMAGE = require('../../assets/image.png');
+const APP_ICON = require('../../assets/icon.png');
 
 interface Props {
   onRunAgent: (text: string) => void;
@@ -120,7 +121,7 @@ export default function NewsInputScreen({
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.logo}>
-              <Ionicons name="flash" size={20} color="#FFFFFF" />
+              <Image source={APP_ICON} style={styles.logoImg} resizeMode="cover" />
             </View>
             <View>
               <View style={styles.brandRow}>
@@ -336,9 +337,14 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 11,
-    backgroundColor: '#2563EB',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  logoImg: {
+    width: '100%',
+    height: '100%',
   },
   brandRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginLeft: 12 },
   brand: { fontFamily: FontFamily.bold, fontSize: 16, color: '#111827', flexShrink: 1 },
