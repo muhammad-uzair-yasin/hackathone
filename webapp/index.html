@@ -1,108 +1,246 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="h-full">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BioRoute Cold-Chain AI</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-          colors: {
-            surface: { DEFAULT: '#18181b', elevated: '#27272a' },
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BioRoute Cold-Chain AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] },
+            colors: {
+              surface: { DEFAULT: "#18181b", elevated: "#27272a" },
+            },
           },
         },
-      },
-    };
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <link rel="stylesheet" href="/static/styles.css"/>
-</head>
-<body class="h-full flex flex-col bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
-
-  <header class="shrink-0 flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md z-20">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-lg">❄️</div>
-      <span class="text-lg font-semibold tracking-tight">BioRoute Orchestrator</span>
-    </div>
-    <div class="flex items-center gap-2">
-      <button type="button" id="btn-view-news-header" title="View breaking news alert" class="lg:hidden px-3 py-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-sm text-blue-200 hover:bg-blue-500/20 transition-colors">
-        📰 News
-      </button>
-      <div id="status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-700 bg-zinc-900 text-sm text-zinc-400">
-        <span id="status-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
-        <span id="status-text">Standing By</span>
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body
+    class="h-full flex flex-col bg-zinc-950 text-zinc-100 font-sans overflow-hidden"
+  >
+    <header
+      class="shrink-0 flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md z-20"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-lg"
+        >
+          ❄️
+        </div>
+        <span class="text-lg font-semibold tracking-tight"
+          >BioRoute Orchestrator</span
+        >
       </div>
-    </div>
-  </header>
-
-  <main class="flex-1 flex min-h-0 relative">
-    <div id="start-overlay" class="absolute inset-0 z-30 overflow-y-auto bg-zinc-950 flex flex-col items-center px-4 py-8 sm:px-8">
-      <div class="start-hero text-center max-w-xl shrink-0 mb-8">
-        <h1 class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-3">Autonomous Logistics Agent</h1>
-        <p class="text-zinc-400 text-sm sm:text-base mb-6">Review active cold-chain routes across Pakistan, then start the agent to simulate a disruption.</p>
-        <div class="flex flex-wrap items-center justify-center gap-3">
-          <button type="button" onclick="startAgent()" class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-medium shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all">
-            ▶ Start Agent
-          </button>
-          <button type="button" id="btn-view-news-start" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-200 font-medium hover:bg-blue-500/20 transition-all">
-            📰 View news
-          </button>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="btn-view-news-header"
+          title="View breaking news alert"
+          class="lg:hidden px-3 py-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-sm text-blue-200 hover:bg-blue-500/20 transition-colors"
+        >
+          📰 News
+        </button>
+        <div
+          id="status-badge"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-700 bg-zinc-900 text-sm text-zinc-400"
+        >
+          <span id="status-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
+          <span id="status-text">Standing By</span>
         </div>
       </div>
-      <div class="w-full max-w-4xl flex-1">
-        <div id="preview-route-map" class="route-panel rounded-2xl border border-violet-500/20 bg-gradient-to-b from-violet-950/40 to-zinc-900/80 p-5">
-          <p class="text-center text-zinc-500 text-sm py-8">Loading fleet routes…</p>
+    </header>
+
+    <main class="flex-1 flex min-h-0 relative">
+      <div
+        id="start-overlay"
+        class="absolute inset-0 z-30 overflow-y-auto bg-zinc-950 flex flex-col items-center px-4 py-8 sm:px-8"
+      >
+        <div class="start-hero text-center max-w-xl shrink-0 mb-8">
+          <h1
+            class="text-3xl sm:text-4xl font-light tracking-tight text-white mb-3"
+          >
+            Autonomous Logistics Agent
+          </h1>
+          <p class="text-zinc-400 text-sm sm:text-base mb-6">
+            Review active cold-chain routes across Pakistan, then start the
+            agent to simulate a disruption.
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onclick="startAgent()"
+              class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-medium shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all"
+            >
+              ▶ Start Agent
+            </button>
+            <button
+              type="button"
+              id="btn-view-news-start"
+              class="inline-flex items-center gap-2 px-6 py-3.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-200 font-medium hover:bg-blue-500/20 transition-all"
+            >
+              📰 View news
+            </button>
+          </div>
+        </div>
+        <div class="w-full max-w-4xl flex-1">
+          <div
+            id="preview-route-map"
+            class="route-panel rounded-2xl border border-violet-500/20 bg-gradient-to-b from-violet-950/40 to-zinc-900/80 p-5"
+          >
+            <p class="text-center text-zinc-500 text-sm py-8">
+              Loading fleet routes…
+            </p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="flex-1 flex min-h-0 w-full">
-      <nav id="fleet-rail" class="hidden lg:flex flex-col items-center gap-2 py-6 px-2 border-r border-zinc-800 bg-zinc-950/80 shrink-0" aria-label="Fleet map view">
-        <button type="button" id="btn-fleet-focus" title="Affected route only" class="fleet-rail-btn w-11 h-11 rounded-xl border border-zinc-700 bg-zinc-900 text-lg hover:bg-zinc-800 transition-colors" aria-pressed="false">🎯</button>
-        <button type="button" id="btn-fleet-all" title="All fleet routes" class="fleet-rail-btn w-11 h-11 rounded-xl border border-violet-500/40 bg-violet-500/15 text-lg hover:bg-violet-500/25 transition-colors ring-2 ring-violet-400" aria-pressed="true">🗺️</button>
-        <button type="button" id="btn-view-news" title="Breaking news alert" class="fleet-rail-btn w-11 h-11 rounded-xl border border-blue-500/40 bg-blue-500/10 text-lg hover:bg-blue-500/20 transition-colors mt-2">📰</button>
-        <span class="text-[9px] text-zinc-600 text-center leading-tight mt-2 px-0.5">Map · News</span>
-      </nav>
-      <div id="main-scroll" class="flex-1 flex flex-col min-h-0 min-w-0">
-        <div id="judge-status-strip" class="hidden shrink-0 px-4 py-2 border-b border-zinc-800 bg-zinc-900/90 text-xs text-zinc-300"></div>
-        <div id="judge-reasoning-panel" class="hidden shrink-0 border-b border-violet-500/20 bg-zinc-950/95"></div>
-        <div id="trace-container" class="flex-1 overflow-y-auto px-4 py-6 sm:px-8 space-y-4 min-w-0"></div>
+      <div class="flex-1 flex min-h-0 w-full">
+        <nav
+          id="fleet-rail"
+          class="hidden lg:flex flex-col items-center gap-2 py-6 px-2 border-r border-zinc-800 bg-zinc-950/80 shrink-0"
+          aria-label="Fleet map view"
+        >
+          <button
+            type="button"
+            id="btn-fleet-focus"
+            title="Affected route only"
+            class="fleet-rail-btn w-11 h-11 rounded-xl border border-zinc-700 bg-zinc-900 text-lg hover:bg-zinc-800 transition-colors"
+            aria-pressed="false"
+          >
+            🎯
+          </button>
+          <button
+            type="button"
+            id="btn-fleet-all"
+            title="All fleet routes"
+            class="fleet-rail-btn w-11 h-11 rounded-xl border border-violet-500/40 bg-violet-500/15 text-lg hover:bg-violet-500/25 transition-colors ring-2 ring-violet-400"
+            aria-pressed="true"
+          >
+            🗺️
+          </button>
+          <button
+            type="button"
+            id="btn-view-news"
+            title="Breaking news alert"
+            class="fleet-rail-btn w-11 h-11 rounded-xl border border-blue-500/40 bg-blue-500/10 text-lg hover:bg-blue-500/20 transition-colors mt-2"
+          >
+            📰
+          </button>
+          <span
+            class="text-[9px] text-zinc-600 text-center leading-tight mt-2 px-0.5"
+            >Map · News</span
+          >
+        </nav>
+        <div id="main-scroll" class="flex-1 flex flex-col min-h-0 min-w-0">
+          <div
+            id="judge-status-strip"
+            class="hidden shrink-0 px-4 py-2 border-b border-zinc-800 bg-zinc-900/90 text-xs text-zinc-300"
+          ></div>
+          <div
+            id="judge-reasoning-panel"
+            class="hidden shrink-0 border-b border-violet-500/20 bg-zinc-950/95"
+          ></div>
+          <div
+            id="trace-container"
+            class="flex-1 overflow-y-auto px-4 py-6 sm:px-8 space-y-4 min-w-0"
+          ></div>
+        </div>
+
+        <aside
+          class="hidden lg:flex w-80 shrink-0 flex-col border-l border-zinc-800 bg-zinc-900/50 p-5 overflow-y-auto gap-6"
+        >
+          <section>
+            <h3
+              class="text-xs font-semibold uppercase tracking-wider text-violet-400 mb-3"
+            >
+              Agent Pipeline
+            </h3>
+            <div id="pipeline-steps" class="space-y-2"></div>
+          </section>
+          <section>
+            <h3
+              class="text-xs font-semibold uppercase tracking-wider text-violet-400 mb-3"
+            >
+              Live Action Plan
+            </h3>
+            <div id="todo-sidebar" class="text-sm text-zinc-500 italic">
+              Waiting for orchestrator…
+            </div>
+          </section>
+        </aside>
       </div>
+    </main>
 
-      <aside class="hidden lg:flex w-80 shrink-0 flex-col border-l border-zinc-800 bg-zinc-900/50 p-5 overflow-y-auto gap-6">
-        <section>
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-violet-400 mb-3">Agent Pipeline</h3>
-          <div id="pipeline-steps" class="space-y-2"></div>
-        </section>
-        <section>
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-violet-400 mb-3">Live Action Plan</h3>
-          <div id="todo-sidebar" class="text-sm text-zinc-500 italic">Waiting for orchestrator…</div>
-        </section>
-      </aside>
-    </div>
-  </main>
-
-  <div id="news-panel-backdrop" class="news-panel-backdrop hidden" aria-hidden="true"></div>
-  <aside id="news-panel" class="news-panel hidden" aria-labelledby="news-panel-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-between gap-3 p-4 border-b border-zinc-800 shrink-0">
-      <div>
-        <p class="text-[10px] uppercase tracking-wider text-blue-400">Breaking news</p>
-        <h2 id="news-panel-title" class="text-sm font-semibold text-white mt-0.5">Incoming alert</h2>
+    <div
+      id="news-panel-backdrop"
+      class="news-panel-backdrop hidden"
+      aria-hidden="true"
+    ></div>
+    <aside
+      id="news-panel"
+      class="news-panel hidden"
+      aria-labelledby="news-panel-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="flex items-center justify-between gap-3 p-4 border-b border-zinc-800 shrink-0"
+      >
+        <div>
+          <p class="text-[10px] uppercase tracking-wider text-blue-400">
+            Breaking news
+          </p>
+          <h2
+            id="news-panel-title"
+            class="text-sm font-semibold text-white mt-0.5"
+          >
+            Incoming alert
+          </h2>
+        </div>
+        <button
+          type="button"
+          id="btn-close-news"
+          class="w-9 h-9 rounded-lg border border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+          aria-label="Close"
+        >
+          ✕
+        </button>
       </div>
-      <button type="button" id="btn-close-news" class="w-9 h-9 rounded-lg border border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors" aria-label="Close">✕</button>
-    </div>
-    <div id="news-panel-meta" class="px-4 py-2 text-[10px] text-zinc-500 border-b border-zinc-800/80 shrink-0"></div>
-    <div id="news-panel-body" class="flex-1 overflow-y-auto p-4 text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap"></div>
-    <div id="news-panel-list" class="hidden flex-1 overflow-y-auto p-3 space-y-2"></div>
-  </aside>
+      <div
+        id="news-panel-meta"
+        class="px-4 py-2 text-[10px] text-zinc-500 border-b border-zinc-800/80 shrink-0"
+      ></div>
+      <div
+        id="news-panel-body"
+        class="flex-1 overflow-y-auto p-4 text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap"
+      ></div>
+      <div
+        id="news-panel-list"
+        class="hidden flex-1 overflow-y-auto p-3 space-y-2"
+      ></div>
+    </aside>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="/static/map.js"></script>
-  <script src="/static/app.js"></script>
-</body>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="/static/map.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
 </html>

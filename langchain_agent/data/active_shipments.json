@@ -1,6 +1,6 @@
 {
-  "last_updated": "2026-05-18T13:41:39.024248+00:00",
-  "company": "BioRoute Cold-Chain Logistics \u00e2\u20ac\u201d Pakistan",
+  "last_updated": "2026-05-18T15:31:09.250900+00:00",
+  "company": "BioRoute Cold-Chain Logistics \u2014 Pakistan",
   "active_shipments": [
     {
       "shipment_id": "SHP-882",
@@ -8,10 +8,10 @@
       "cargo_value_usd": 50000,
       "max_idling_temp_threshold_celsius": 38,
       "max_safe_idle_minutes": 45,
-      "current_status": "In Transit (On Time)",
-      "eta_minutes": 40,
+      "current_status": "Emergency Reroute (Heat + Traffic)",
+      "eta_minutes": 52,
       "destination_contact": "admin@liaquathospital.edu.pk",
-      "route_name": "N-5 Karachi \u00e2\u2020\u2019 Jamshoro",
+      "route_name": "M-9 Thatta Bypass",
       "route": [
         {
           "place": "Karachi Depot",
@@ -19,14 +19,14 @@
           "lon": 67.36
         },
         {
-          "place": "Hyderabad West",
-          "lat": 25.382,
-          "lon": 68.368
+          "place": "Thatta Bypass",
+          "lat": 24.748,
+          "lon": 67.925
         },
         {
-          "place": "Liaquat Hospital, Jamshoro",
-          "lat": 25.428,
-          "lon": 68.278
+          "place": "Hyderabad Cold-Vault",
+          "lat": 25.401,
+          "lon": 68.342
         }
       ],
       "alternative_routes": [
@@ -133,7 +133,7 @@
       "current_status": "In Transit (On Time)",
       "eta_minutes": 55,
       "destination_contact": "admin@alliedhospital.pk",
-      "route_name": "M-3 Lahore \u00e2\u2020\u2019 Faisalabad",
+      "route_name": "M-3 Lahore \u2192 Faisalabad",
       "route": [
         {
           "place": "Lahore Hub",
@@ -255,7 +255,7 @@
       "current_status": "In Transit (On Time)",
       "eta_minutes": 18,
       "destination_contact": "emergency@holyfamily.org.pk",
-      "route_name": "Murree Rd Islamabad \u00e2\u2020\u2019 Rawalpindi",
+      "route_name": "Murree Rd Islamabad \u2192 Rawalpindi",
       "route": [
         {
           "place": "I-9 Pharma Hub",
@@ -377,7 +377,7 @@
       "current_status": "In Transit (On Time)",
       "eta_minutes": 72,
       "destination_contact": "pharmacy@bvh.org.pk",
-      "route_name": "N-5 Multan \u00e2\u2020\u2019 Bahawalpur",
+      "route_name": "N-5 Multan \u2192 Bahawalpur",
       "route": [
         {
           "place": "Multan Cold Storage",

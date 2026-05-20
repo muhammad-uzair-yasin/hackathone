@@ -1,3 +1,17 @@
 {
-  "notifications": []
+  "notifications": [
+    {
+      "notification_id": "NOTIF-SHP-882-203109",
+      "timestamp": "2026-05-18T15:31:09.247114+00:00",
+      "shipment_id": "SHP-882",
+      "recipient": "Liaquat University Hospital Administration",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "channels": [
+        "email",
+        "sms"
+      ],
+      "message": "URGENT: SHP-882 Insulin Shipment Reroute Notification\n\nShipment ID: SHP-882\nCargo: Insulin (Temperature-Critical) | Value: $50,000\nOriginal Route: N-5 Karachi \u2192 Jamshoro\n\nREASON FOR REROUTE:\nSindh Emergency Advisory (2:15 PM): Multi-vehicle collision on N-5 National Highway near Hyderabad West Bypass has blocked ALL lanes toward Jamshoro. Estimated clearance: 2\u20133 hours. Concurrent extreme heat emergency: temperature 42\u00b0C, forecast 44\u00b0C by 3:00 PM.\n\nCRITICAL CARGO RISK:\nInsulin max-safe threshold: 38\u00b0C. Current ambient exceeds threshold by 4\u00b0C. Spoilage risk: total loss within 20 minutes if unrefrigerated.\n\nNEW PLAN (IMMEDIATE EXECUTION):\n\u2022 New Route: M-9 Thatta Bypass (avoids N-5 entirely)\n\u2022 Interim Stop: Hyderabad Cold-Vault for temperature re-stabilization and handoff (~26 min into transit)\n\u2022 Final Destination: Liaquat Hospital, Jamshoro (52 min total ETA from current location)\n\u2022 Expected Arrival: ~3:30 PM (within safe delivery window)\n\nCOLD-CHAIN INTEGRITY:\nCargo will be transferred to temperature-controlled vault facility at Hyderabad, ensuring insulin remains within safe parameters. Professional refrigeration infrastructure will restore full cold-chain compliance before final hospital leg.\n\nNEXT STEPS:\n1. Driver has been notified and will proceed immediately via M-9 Thatta Bypass.\n2. Hyderabad Cold-Vault facility has been alerted and is preparing bay for handoff.\n3. Real-time GPS tracking remains active; you will receive arrival confirmation.\n\nESTIMATED DELIVERY: 3:30 PM (52 minutes from reroute execution)\n\nFor urgent questions, contact BioRoute Operations: +92 XXX-XXXXXXX\n\nThis action taken under emergency cold-chain rescue protocols. Cargo integrity and patient safety prioritized."
+    }
+  ]
 }

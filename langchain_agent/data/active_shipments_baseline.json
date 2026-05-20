@@ -48,7 +48,11 @@
           "stops": [
             { "place": "Karachi Depot", "lat": 24.783, "lon": 67.36 },
             { "place": "Mirpur Khas", "lat": 25.525, "lon": 69.015 },
-            { "place": "Liaquat Hospital, Jamshoro", "lat": 25.428, "lon": 68.278 }
+            {
+              "place": "Liaquat Hospital, Jamshoro",
+              "lat": 25.428,
+              "lon": 68.278
+            }
           ]
         },
         {
@@ -59,7 +63,11 @@
           "stops": [
             { "place": "Karachi Depot", "lat": 24.783, "lon": 67.36 },
             { "place": "Malir Service Rd", "lat": 24.902, "lon": 67.185 },
-            { "place": "Liaquat Hospital, Jamshoro", "lat": 25.428, "lon": 68.278 }
+            {
+              "place": "Liaquat Hospital, Jamshoro",
+              "lat": 25.428,
+              "lon": 68.278
+            }
           ]
         }
       ]
@@ -99,7 +107,11 @@
           "stops": [
             { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
             { "place": "Kot Abdul Malik", "lat": 31.812, "lon": 74.142 },
-            { "place": "Allied Hospital, Faisalabad", "lat": 31.418, "lon": 73.079 }
+            {
+              "place": "Allied Hospital, Faisalabad",
+              "lat": 31.418,
+              "lon": 73.079
+            }
           ]
         },
         {
@@ -110,7 +122,11 @@
           "stops": [
             { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
             { "place": "Raiwind Rd", "lat": 31.392, "lon": 74.215 },
-            { "place": "Allied Hospital, Faisalabad", "lat": 31.418, "lon": 73.079 }
+            {
+              "place": "Allied Hospital, Faisalabad",
+              "lat": 31.418,
+              "lon": 73.079
+            }
           ]
         },
         {
@@ -121,7 +137,11 @@
           "stops": [
             { "place": "Lahore Hub", "lat": 31.548, "lon": 74.322 },
             { "place": "Pindi Bhattian", "lat": 31.898, "lon": 73.503 },
-            { "place": "Allied Hospital, Faisalabad", "lat": 31.418, "lon": 73.079 }
+            {
+              "place": "Allied Hospital, Faisalabad",
+              "lat": 31.418,
+              "lon": 73.079
+            }
           ]
         }
       ]
@@ -223,7 +243,11 @@
           "stops": [
             { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
             { "place": "Hasilpur", "lat": 29.692, "lon": 71.261 },
-            { "place": "Bahawal Victoria Hospital", "lat": 29.394, "lon": 71.682 }
+            {
+              "place": "Bahawal Victoria Hospital",
+              "lat": 29.394,
+              "lon": 71.682
+            }
           ]
         },
         {
@@ -234,7 +258,11 @@
           "stops": [
             { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
             { "place": "Lodhran", "lat": 29.54, "lon": 71.632 },
-            { "place": "Bahawal Victoria Hospital", "lat": 29.394, "lon": 71.682 }
+            {
+              "place": "Bahawal Victoria Hospital",
+              "lat": 29.394,
+              "lon": 71.682
+            }
           ]
         },
         {
@@ -245,7 +273,11 @@
           "stops": [
             { "place": "Multan Cold Storage", "lat": 30.198, "lon": 71.468 },
             { "place": "Ahmedpur East", "lat": 29.142, "lon": 71.257 },
-            { "place": "Bahawal Victoria Hospital", "lat": 29.394, "lon": 71.682 }
+            {
+              "place": "Bahawal Victoria Hospital",
+              "lat": 29.394,
+              "lon": 71.682
+            }
           ]
         }
       ]
