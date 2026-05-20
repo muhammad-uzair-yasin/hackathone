@@ -24,7 +24,7 @@ DATA_DIR = Path(__file__).parent / "data"
 # ─── Subagent System Prompts ─────────────────────────────────────────────────
 
 EXTRACTOR_PROMPT = """\
-You are the Hazard Extractor for BioRoute Cold-Chain Logistics.
+You are the Hazard Detector for BioRoute Cold-Chain Logistics.
 
 ## Your job
 Read ONLY the raw alert text in the task message. Extract measurable facts.
@@ -43,7 +43,7 @@ Read ONLY the raw alert text in the task message. Extract measurable facts.
 """
 
 FLEET_SCOUT_PROMPT = """\
-You are the Fleet Scout for BioRoute Cold-Chain Logistics.
+You are the Shipment Analyzer for BioRoute Cold-Chain Logistics.
 
 ## Your job
 Read /data/active_shipments.json. List every active shipment on the road.
@@ -108,14 +108,22 @@ Read the rough news alert yourself. Pick the BEST of four alternative_routes for
 - Read /data/active_shipments.json if you need exact alternative route names
 
 ## Do NOT use
-- Pre-parsed hazard JSON from hazard-extractor — reason from the news + impact only
+- Pre-parsed hazard JSON from hazard-detector — reason from the news + impact only
 
 ## OUTPUT — ActionPlan JSON
 - selected_route_name, selected_alternative_id, selection_rationale (2–3 sentences for summary.md)
 - why_brief: ≤15 words — why A1 beat A2/A3/A4
 - display_summary: one sentence — action taken
+- confidence_score: float 0.0–1.0 — your confidence in this action (0.95 if route clearly avoids hazard,
+  lower if uncertain)
 - database_simulation_payload: new_route (exact name), new_destination (last stop), new_status
-- notification_simulation, urgency, action_type
+- notification_simulation: THREE-WAY notification bundle:
+    driver: {{ message_draft (SMS ≤100 words: new route, key turn, ETA), urgency_level, channels }}
+    hospital: {{ recipient (hospital + dept), message_draft (email ≤200 words: cargo, old ETA, new ETA,
+      collection point), urgency_level, channels }}
+    coordinator: {{ message_draft (brief ≤150 words: shipment ID, hazard, route, ETA delta, cost),
+      urgency_level, channels }}
+- urgency, action_type
 
 ## Rules
 - Reject alternatives that still use the blocked corridor.
@@ -125,7 +133,7 @@ Read the rough news alert yourself. Pick the BEST of four alternative_routes for
 
 SUBAGENTS = [
     {
-        "name": "hazard-extractor",
+        "name": "hazard-detector",
         "description": (
             "Step 1 — Reads raw news/alert text only. "
             "Returns HazardExtraction (what happened + why_brief)."
@@ -136,7 +144,7 @@ SUBAGENTS = [
         "response_format": HazardExtraction,
     },
     {
-        "name": "fleet-scout",
+        "name": "shipment-analyzer",
         "description": (
             "Step 2 — Reads active_shipments.json. "
             "Returns FleetScoutOutput (who is on the road)."
@@ -187,9 +195,9 @@ Always keep the user's FULL RAW ALERT TEXT (the original news message).
 
 ## Mandatory workflow (in order)
 1. write_todos — list steps you will actually run
-2. task('hazard-extractor', paste FULL raw alert text only)
-3. If hazard_detected: task('fleet-scout', paste FULL raw alert text only)
-4. If hazard_detected: task('impact-analyzer', paste FULL raw alert text, then fleet-scout JSON — no hazard JSON)
+2. task('hazard-detector', paste FULL raw alert text only)
+3. If hazard_detected: task('shipment-analyzer', paste FULL raw alert text only)
+4. If hazard_detected: task('impact-analyzer', paste FULL raw alert text, then shipment-analyzer JSON — no hazard JSON)
 5. If impact_detected AND (requires_immediate_action OR risk_level HIGH/CRITICAL):
    task('action-planner', paste FULL raw alert text + impact-analyzer JSON — no hazard JSON)
 6. If action urgency IMMEDIATE or SOON: update_crm_tool (updates route in fleet DB) then notify_tool

@@ -1,0 +1,61 @@
+{
+  "environment": {
+    "ambient_temp_celsius": 38.5,
+    "humidity_percent": 72,
+    "weather_condition": "heatwave",
+    "weather_forecast_2h": "temperatures rising to 41C",
+    "time_of_day": "13:45",
+    "is_peak_heat_window": true,
+    "peak_heat_window": "12:00-17:00"
+  },
+  "road_conditions": {
+    "traffic_level": "HIGH",
+    "known_blockages": ["N-55 near Hala interchange"],
+    "avg_delay_minutes": 18,
+    "checkpoint_wait_thatta": 12,
+    "road_quality": "POOR"
+  },
+  "vehicle_telemetry": {
+    "SHP-882": {
+      "idle_minutes": 14,
+      "engine_temp_celsius": 92,
+      "refrigeration_unit_status": "ACTIVE",
+      "battery_percent": 61,
+      "speed_kmh": 0,
+      "last_gps_update": "2 minutes ago"
+    },
+    "SHP-901": {
+      "idle_minutes": 0,
+      "engine_temp_celsius": 78,
+      "refrigeration_unit_status": "ACTIVE",
+      "battery_percent": 88,
+      "speed_kmh": 72,
+      "last_gps_update": "30 seconds ago"
+    },
+    "SHP-915": {
+      "idle_minutes": 3,
+      "engine_temp_celsius": 84,
+      "refrigeration_unit_status": "WARNING",
+      "battery_percent": 45,
+      "speed_kmh": 15,
+      "last_gps_update": "1 minute ago"
+    },
+    "SHP-928": {
+      "idle_minutes": 0,
+      "engine_temp_celsius": 76,
+      "refrigeration_unit_status": "ACTIVE",
+      "battery_percent": 92,
+      "speed_kmh": 88,
+      "last_gps_update": "15 seconds ago"
+    }
+  },
+  "infrastructure": {
+    "power_grid_stability": "UNSTABLE",
+    "fuel_availability_route": "LIMITED",
+    "hospital_receiving_status": {
+      "District_4_General": "READY",
+      "Hyderabad_Central": "BUSY",
+      "Karachi_Civil": "READY"
+    }
+  }
+}

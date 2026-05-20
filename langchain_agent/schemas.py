@@ -260,22 +260,51 @@ class DatabaseSimulationPayload(BaseModel):
     )
 
 
-class NotificationSimulation(BaseModel):
-    """Hospital notification payload — written by notify_tool (Step 4 simulation)."""
+class DriverNotification(BaseModel):
+    """Short actionable turn-by-turn message for the truck driver."""
+    message_draft: str = Field(
+        description="Concise SMS/radio message for the driver: new route name, key turn, ETA. Max 100 words."
+    )
+    urgency_level: Literal["IMMEDIATE", "HIGH", "MEDIUM", "LOW"]
+    channels: List[str] = Field(default_factory=lambda: ["sms", "radio"])
 
+
+class HospitalNotification(BaseModel):
+    """Formal ETA update notification for hospital administration."""
+    recipient: str = Field(description="Hospital name + department, e.g. 'Liaquat Hospital, Pharmacy Admin'.")
+    message_draft: str = Field(
+        description="Formal email body: cargo type, original ETA, new ETA, new collection point. Max 200 words."
+    )
+    urgency_level: Literal["IMMEDIATE", "HIGH", "MEDIUM", "LOW"]
+    channels: List[str] = Field(default_factory=lambda: ["email"])
+
+
+class CoordinatorNotification(BaseModel):
+    """Operational summary for fleet coordinator / dispatch."""
+    message_draft: str = Field(
+        description="Operational brief: shipment ID, hazard, selected route, ETA delta, cost impact. Max 150 words."
+    )
+    urgency_level: Literal["IMMEDIATE", "HIGH", "MEDIUM", "LOW"]
+    channels: List[str] = Field(default_factory=lambda: ["email", "dashboard"])
+
+
+class NotificationSimulation(BaseModel):
+    """Three-way notification bundle (driver / hospital / coordinator)."""
+    driver: DriverNotification
+    hospital: HospitalNotification
+    coordinator: CoordinatorNotification
+
+    # Legacy single-recipient fields kept for backward compat
     recipient: str = Field(
-        description="Hospital or clinic administration name."
+        default="",
+        description="Primary recipient name (hospital admin). Populated from hospital.recipient.",
     )
     message_draft: str = Field(
-        description="Full email/SMS body; max 400 words."
+        default="",
+        description="Convenience alias of hospital.message_draft.",
     )
-    urgency_level: Literal["IMMEDIATE", "HIGH", "MEDIUM", "LOW"] = Field(
-        description="Notification priority."
-    )
-    channels: List[str] = Field(
-        default_factory=lambda: ["email", "sms"],
-        description="Delivery channels simulated.",
-    )
+    urgency_level: Literal["IMMEDIATE", "HIGH", "MEDIUM", "LOW"] = "HIGH"
+    channels: List[str] = Field(default_factory=lambda: ["email", "sms"])
 
 
 class ActionPlan(BaseModel):
@@ -311,6 +340,10 @@ class ActionPlan(BaseModel):
     )
     notification_simulation: NotificationSimulation = Field(
         description="Exact fields for notify_tool."
+    )
+    confidence_score: Optional[float] = Field(
+        default=None,
+        description="Agent confidence in this action plan, 0.0–1.0. Higher = more certain.",
     )
     display_summary: str = Field(
         description="One judge-facing sentence describing the planned action.",

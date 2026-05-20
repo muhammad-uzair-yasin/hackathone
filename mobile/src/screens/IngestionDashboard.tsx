@@ -5,7 +5,7 @@
  *   GET /api/db         → loads live shipment data
  *   GET /api/scenarios  → loads test scenario list
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '../components/GlassCard';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 
@@ -71,14 +72,88 @@ interface Scenario {
 interface Props {
   onAnalyze: (text: string) => void;
   isAnalyzing: boolean;
+  onDriverReport?: () => void;
 }
 
-export default function IngestionDashboard({ onAnalyze, isAnalyzing }: Props) {
+// ─── Temperature Gauge ────────────────────────────────────────────────────────
+function TempGauge({ current, threshold }: { current: number; threshold: number }) {
+  const pct = Math.min(100, Math.max(0, (current / threshold) * 100));
+  const level = pct < 60 ? 'safe' : pct < 85 ? 'warn' : 'danger';
+  const color = level === 'safe' ? '#10B981' : level === 'warn' ? '#F59E0B' : '#EF4444';
+  const label = level === 'safe' ? 'SAFE' : level === 'warn' ? 'CAUTION' : 'DANGER';
+  return (
+    <View style={{ marginTop: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
+        <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 10, color: '#9CA3AF' }}>
+          TEMP {current}°C / limit {threshold}°C
+        </Text>
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 10, color }}>{label}</Text>
+      </View>
+      <View style={{ height: 6, borderRadius: 99, backgroundColor: '#F3F4F6', overflow: 'hidden' }}>
+        <View style={{ width: `${pct}%` as any, height: '100%', borderRadius: 99, backgroundColor: color }} />
+      </View>
+    </View>
+  );
+}
+
+// ─── Escalation Timer ─────────────────────────────────────────────────────────
+function EscalationTimer({ active, onAcknowledge }: { active: boolean; onAcknowledge: () => void }) {
+  const [secs, setSecs] = useState(300); // 5-min countdown
+  const [acknowledged, setAcknowledged] = useState(false);
+
+  useEffect(() => {
+    if (!active || acknowledged) return;
+    const id = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [active, acknowledged]);
+
+  if (!active) return null;
+
+  const mins = Math.floor(secs / 60);
+  const sec = secs % 60;
+  const timeStr = `${mins}:${sec.toString().padStart(2, '0')}`;
+
+  return (
+    <View style={[
+      timerStyles.wrap,
+      acknowledged ? timerStyles.wrapOk : secs < 60 ? timerStyles.wrapUrgent : timerStyles.wrapActive,
+    ]}>
+      <Ionicons
+        name={acknowledged ? 'checkmark-circle' : 'warning-outline'}
+        size={18}
+        color={acknowledged ? '#059669' : secs < 60 ? '#DC2626' : '#D97706'}
+      />
+      <View style={{ flex: 1 }}>
+        <Text style={[
+          timerStyles.label,
+          { color: acknowledged ? '#059669' : secs < 60 ? '#DC2626' : '#D97706' },
+        ]}>
+          {acknowledged ? 'Driver acknowledged reroute ✓' : `Driver acknowledgement required`}
+        </Text>
+        {!acknowledged && (
+          <Text style={timerStyles.sub}>Auto-escalate in {timeStr}</Text>
+        )}
+      </View>
+      {!acknowledged && (
+        <TouchableOpacity
+          style={[timerStyles.ackBtn, secs < 60 && timerStyles.ackBtnUrgent]}
+          onPress={() => { setAcknowledged(true); onAcknowledge(); }}
+          activeOpacity={0.8}
+        >
+          <Text style={timerStyles.ackTxt}>ACK</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+export default function IngestionDashboard({ onAnalyze, isAnalyzing, onDriverReport }: Props) {
   const [alertText, setAlertText] = useState(DEMO_ALERT);
   const [shipments, setShipments] = useState<Shipment[]>(FALLBACK_SHIPMENTS);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [showScenarios, setShowScenarios] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [rerouteActive, setRerouteActive] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // ─── Load live data from backend ────────────────────────────────────────
@@ -141,8 +216,13 @@ export default function IngestionDashboard({ onAnalyze, isAnalyzing }: Props) {
       Alert.alert('Empty Alert', 'Please paste an unstructured alert to analyze.');
       return;
     }
+    setRerouteActive(false);
     onAnalyze(alertText);
   };
+
+  const handleAnalyzeDone = useCallback(() => {
+    setRerouteActive(true);
+  }, []);
 
   const handleSelectScenario = (scenario: Scenario) => {
     setAlertText(scenario.text);
@@ -272,53 +352,78 @@ export default function IngestionDashboard({ onAnalyze, isAnalyzing }: Props) {
 
       {/* Live Shipments */}
       <Text style={styles.liveLabel}>LIVE SHIPMENTS</Text>
-      {shipments.map((s) => (
-        <GlassCard key={s.id} style={styles.shipmentCard}>
-          <View style={styles.shipmentBanner}>
-            <View style={styles.shipmentBannerGradient} />
-            <View style={styles.badgeRow}>
-              <View style={styles.activeBadge}>
-                <Text style={styles.activeBadgeText}>ACTIVE</Text>
-              </View>
-              <View style={[styles.riskBadge, s.riskLevel === 'error' ? styles.riskBadgeError : styles.riskBadgeStable]}>
-                <Text style={[styles.riskBadgeText, s.riskLevel === 'error' ? styles.riskTextError : styles.riskTextStable]}>
-                  {s.risk}
-                </Text>
-              </View>
-            </View>
-          </View>
 
-          <View style={styles.shipmentBody}>
-            <View style={styles.shipmentTopRow}>
-              <View>
-                <Text style={styles.shipmentId}>{s.id}: {s.cargo}</Text>
-                <Text style={styles.shipmentRoute}>{s.route}</Text>
-              </View>
-              <View style={styles.tempBox}>
-                <Text style={styles.tempValue}>{s.temp}</Text>
-                <Text style={styles.tempTarget}>Target: {s.target}</Text>
-              </View>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.shipmentMetaRow}>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaIcon}>🕐</Text>
-                <View>
-                  <Text style={styles.metaLabel}>ETA</Text>
-                  <Text style={styles.metaValue}>{s.eta}</Text>
+      {/* Escalation Timer (shown after a reroute analysis) */}
+      <EscalationTimer
+        active={rerouteActive}
+        onAcknowledge={() => setRerouteActive(false)}
+      />
+
+      {shipments.map((s) => {
+        // Extract numeric temp for gauge
+        const tempNum = parseFloat(s.temp?.replace('°C', '') || '0') || 0;
+        const limitNum = parseFloat(s.target?.replace(/[^0-9.]/g, '') || '38') || 38;
+        return (
+          <GlassCard key={s.id} style={styles.shipmentCard}>
+            <View style={styles.shipmentBanner}>
+              <View style={styles.shipmentBannerGradient} />
+              <View style={styles.badgeRow}>
+                <View style={styles.activeBadge}>
+                  <Text style={styles.activeBadgeText}>ACTIVE</Text>
                 </View>
-              </View>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaIcon}>📍</Text>
-                <View>
-                  <Text style={styles.metaLabel}>Status</Text>
-                  <Text style={styles.metaValue}>{s.status}</Text>
+                <View style={[styles.riskBadge, s.riskLevel === 'error' ? styles.riskBadgeError : styles.riskBadgeStable]}>
+                  <Text style={[styles.riskBadgeText, s.riskLevel === 'error' ? styles.riskTextError : styles.riskTextStable]}>
+                    {s.risk}
+                  </Text>
                 </View>
               </View>
             </View>
-          </View>
-        </GlassCard>
-      ))}
+
+            <View style={styles.shipmentBody}>
+              <View style={styles.shipmentTopRow}>
+                <View>
+                  <Text style={styles.shipmentId}>{s.id}: {s.cargo}</Text>
+                  <Text style={styles.shipmentRoute}>{s.route}</Text>
+                </View>
+                <View style={styles.tempBox}>
+                  <Text style={styles.tempValue}>{s.temp}</Text>
+                  <Text style={styles.tempTarget}>Limit: {s.target}</Text>
+                </View>
+              </View>
+
+              {/* Temperature Gauge */}
+              <TempGauge current={tempNum} threshold={limitNum} />
+
+              <View style={styles.divider} />
+              <View style={styles.shipmentMetaRow}>
+                <View style={styles.metaItem}>
+                  <Text style={styles.metaIcon}>🕐</Text>
+                  <View>
+                    <Text style={styles.metaLabel}>ETA</Text>
+                    <Text style={styles.metaValue}>{s.eta}</Text>
+                  </View>
+                </View>
+                <View style={styles.metaItem}>
+                  <Text style={styles.metaIcon}>📍</Text>
+                  <View>
+                    <Text style={styles.metaLabel}>Status</Text>
+                    <Text style={styles.metaValue}>{s.status}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </GlassCard>
+        );
+      })}
+
+      {/* Driver Report Button */}
+      {onDriverReport && (
+        <TouchableOpacity style={styles.driverReportBtn} onPress={onDriverReport} activeOpacity={0.85}>
+          <Ionicons name="warning-outline" size={16} color="#DC2626" />
+          <Text style={styles.driverReportTxt}>Report a Driver Issue</Text>
+          <Ionicons name="chevron-forward" size={14} color="#DC2626" />
+        </TouchableOpacity>
+      )}
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -447,4 +552,47 @@ const styles = StyleSheet.create({
   metaIcon: { fontSize: 16, color: Colors.outline },
   metaLabel: { ...Typography.labelSM, color: Colors.outline },
   metaValue: { ...Typography.labelMD, color: Colors.onSurface },
+  driverReportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: `${Colors.error}30`,
+    backgroundColor: `${Colors.error}08`,
+    marginBottom: 12,
+  },
+  driverReportTxt: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: Colors.error,
+    flex: 1,
+  },
+});
+
+// ─── Escalation Timer Styles ──────────────────────────────────────────────────
+const timerStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  wrapActive: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
+  wrapUrgent: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+  wrapOk: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+  label: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  sub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  ackBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 99,
+    backgroundColor: '#D97706',
+  },
+  ackBtnUrgent: { backgroundColor: '#DC2626' },
+  ackTxt: { fontFamily: 'Inter_700Bold', fontSize: 11, color: '#FFF' },
 });

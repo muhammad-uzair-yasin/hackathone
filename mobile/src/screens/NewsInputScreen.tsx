@@ -18,9 +18,13 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AnimatedGlobeHero from '../components/AnimatedGlobeHero';
 import AppDialog from '../components/AppDialog';
 import ScenarioPicker from '../components/ScenarioPicker';
-import { fetchHealth, fetchScenarios } from '../api/client';
+import GlassCard from '../components/GlassCard';
+import { fetchHealth, fetchScenarios, extractTextFromUrl, extractTextFromPdf } from '../api/client';
 import type { Scenario } from '../types/shipment';
 import { Colors, FontFamily } from '../theme';
+import VoiceInputButton from '../components/VoiceInputButton';
+import * as DocumentPicker from 'expo-document-picker';
+
 
 const APP_ICON = require('../../assets/icon.png');
 
@@ -61,6 +65,12 @@ export default function NewsInputScreen({
   const [online, setOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [activeInputTab, setActiveInputTab] = useState<'scenarios' | 'manual' | 'extract'>('scenarios');
+
+  const [urlInput, setUrlInput] = useState('');
+  const [isExtractingUrl, setIsExtractingUrl] = useState(false);
+  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
+  const [pdfName, setPdfName] = useState('');
 
   const { width: screenWidth } = useWindowDimensions();
   const heroTextMaxWidth = Math.min(screenWidth * 0.56, screenWidth - 200);
@@ -81,6 +91,9 @@ export default function NewsInputScreen({
       setAlertText('');
       setSelectedId(null);
       setEditorOpen(false);
+      setUrlInput('');
+      setPdfName('');
+      setActiveInputTab('scenarios');
     }
   }, [resetToken]);
 
@@ -88,6 +101,74 @@ export default function NewsInputScreen({
     setSelectedId(s.id);
     setAlertText(s.text);
   };
+
+  const handleExtractUrl = async () => {
+    if (!urlInput.trim()) {
+      Alert.alert('Empty URL', 'Please enter a valid webpage URL.');
+      return;
+    }
+    setIsExtractingUrl(true);
+    try {
+      const res = await extractTextFromUrl(urlInput.trim());
+      if (res.success && res.text) {
+        setAlertText(res.text);
+        setSelectedId(null);
+        Alert.alert(
+          'Extraction Success',
+          `Successfully extracted text from web link (${res.text.length} characters). Preview or run AI agent now.`
+        );
+      } else {
+        Alert.alert('Extraction Failed', res.error || 'Failed to extract text from URL.');
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'An error occurred during extraction.');
+    } finally {
+      setIsExtractingUrl(false);
+    }
+  };
+
+  const handleExtractPdf = async () => {
+    try {
+      const pickerResult = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (pickerResult.canceled || !pickerResult.assets || pickerResult.assets.length === 0) {
+        return;
+      }
+
+      const asset = pickerResult.assets[0];
+      setPdfName(asset.name || 'Selected PDF');
+      setIsExtractingPdf(true);
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
+        name: asset.name || 'document.pdf',
+        type: 'application/pdf',
+      } as any);
+
+      const res = await extractTextFromPdf(formData);
+      if (res.success && res.text) {
+        setAlertText(res.text);
+        setSelectedId(null);
+        Alert.alert(
+          'Extraction Success',
+          `Successfully extracted text from PDF (${res.text.length} characters). Preview or run AI agent now.`
+        );
+      } else {
+        Alert.alert('Extraction Failed', res.error || 'Failed to extract text from PDF.');
+        setPdfName('');
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'An error occurred during PDF selection/upload.');
+      setPdfName('');
+    } finally {
+      setIsExtractingPdf(false);
+    }
+  };
+
 
   const handleResetPress = () => {
     if (!onResetDemo) return;
@@ -175,55 +256,221 @@ export default function NewsInputScreen({
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Choose how you want to start</Text>
+        <Text style={styles.sectionLabel}>Choose input source</Text>
 
-        <View style={styles.card}>
-          <View style={styles.blockHeader}>
-            <View style={styles.blockIcon}>
-              <Ionicons name="layers-outline" size={18} color="#4B5563" />
-            </View>
-            <View style={styles.blockText}>
-              <Text style={styles.kicker}>Scenario</Text>
-              <Text style={styles.blockTitle}>Select a scenario</Text>
-              <Text style={styles.blockBody}>Pick a pre-built scenario to get started.</Text>
-            </View>
-          </View>
-
-          {loading ? (
-            <ActivityIndicator style={styles.loader} color="#2563EB" />
-          ) : (
-            <ScenarioPicker
-              scenarios={scenarios}
-              selectedId={selectedId}
-              onSelect={loadScenario}
-              disabled={busy}
-              variant="embedded"
-            />
-          )}
-
-          <View style={styles.or}>
-            <View style={styles.orLine} />
-            <Text style={styles.orLabel}>OR</Text>
-            <View style={styles.orLine} />
-          </View>
-
+        {/* ── Input Tab Switcher ──────────────────────────────── */}
+        <View style={styles.inputTabRow}>
           <TouchableOpacity
-            style={styles.listRow}
-            onPress={() => setEditorOpen(true)}
-            activeOpacity={0.7}
+            style={[styles.inputTabBtn, activeInputTab === 'scenarios' && styles.inputTabBtnActive]}
+            onPress={() => setActiveInputTab('scenarios')}
+            activeOpacity={0.8}
             disabled={busy}
           >
-            <View style={styles.blockIcon}>
-              <Ionicons name="create-outline" size={18} color="#4B5563" />
-            </View>
-            <View style={styles.blockText}>
-              <Text style={styles.kicker}>Custom alert</Text>
-              <Text style={styles.blockTitle}>Paste your alert text</Text>
-              <Text style={styles.blockBody}>Add your own breaking news alert to analyze.</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Ionicons name="layers-outline" size={15} color={activeInputTab === 'scenarios' ? '#FFF' : '#6B7280'} />
+            <Text style={[styles.inputTabTxt, activeInputTab === 'scenarios' && styles.inputTabTxtActive]}>Scenarios</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.inputTabBtn, activeInputTab === 'manual' && styles.inputTabBtnActive]}
+            onPress={() => setActiveInputTab('manual')}
+            activeOpacity={0.8}
+            disabled={busy}
+          >
+            <Ionicons name="create-outline" size={15} color={activeInputTab === 'manual' ? '#FFF' : '#6B7280'} />
+            <Text style={[styles.inputTabTxt, activeInputTab === 'manual' && styles.inputTabTxtActive]}>Text/Voice</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.inputTabBtn, activeInputTab === 'extract' && styles.inputTabBtnActive]}
+            onPress={() => setActiveInputTab('extract')}
+            activeOpacity={0.8}
+            disabled={busy}
+          >
+            <Ionicons name="cloud-upload-outline" size={15} color={activeInputTab === 'extract' ? '#FFF' : '#6B7280'} />
+            <Text style={[styles.inputTabTxt, activeInputTab === 'extract' && styles.inputTabTxtActive]}>URL/PDF</Text>
           </TouchableOpacity>
         </View>
+
+        {/* ── Tab Contents ────────────────────────────────────── */}
+        {activeInputTab === 'scenarios' && (
+          <View style={styles.card}>
+            <View style={styles.blockHeader}>
+              <View style={styles.blockIcon}>
+                <Ionicons name="layers-outline" size={18} color="#4B5563" />
+              </View>
+              <View style={styles.blockText}>
+                <Text style={styles.kicker}>Scenario</Text>
+                <Text style={styles.blockTitle}>Select a pre-built scenario</Text>
+                <Text style={styles.blockBody}>Pick a simulated event to analyze risk outcomes.</Text>
+              </View>
+            </View>
+
+            {loading ? (
+              <ActivityIndicator style={styles.loader} color="#2563EB" />
+            ) : (
+              <ScenarioPicker
+                scenarios={scenarios}
+                selectedId={selectedId}
+                onSelect={loadScenario}
+                disabled={busy}
+                variant="embedded"
+              />
+            )}
+          </View>
+        )}
+
+        {activeInputTab === 'manual' && (
+          <>
+            {/* Custom text entry */}
+            <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.listRow}
+                onPress={() => setEditorOpen(true)}
+                activeOpacity={0.7}
+                disabled={busy}
+              >
+                <View style={styles.blockIcon}>
+                  <Ionicons name="create-outline" size={18} color="#4B5563" />
+                </View>
+                <View style={styles.blockText}>
+                  <Text style={styles.kicker}>Custom text alert</Text>
+                  <Text style={styles.blockTitle}>
+                    {alertText ? 'Review or edit text' : 'Paste custom text alert'}
+                  </Text>
+                  <Text style={styles.blockBody}>
+                    Input custom weather warnings or logistics blockades.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Voice Input */}
+            <View style={styles.card}>
+              <View style={styles.blockHeader}>
+                <View style={styles.blockIcon}>
+                  <Ionicons name="mic-outline" size={18} color="#DC2626" />
+                </View>
+                <View style={styles.blockText}>
+                  <Text style={[styles.kicker, { color: '#DC2626' }]}>Voice Alert</Text>
+                  <Text style={styles.blockTitle}>Speak your incident</Text>
+                  <Text style={styles.blockBody}>
+                    Hold mic and describe the blockade or issue.
+                  </Text>
+                </View>
+              </View>
+              <VoiceInputButton
+                disabled={busy}
+                onTranscript={(text) => {
+                  setAlertText(text);
+                  setSelectedId(null);
+                }}
+              />
+            </View>
+          </>
+        )}
+
+        {activeInputTab === 'extract' && (
+          <>
+            {/* Web Link */}
+            <View style={styles.card}>
+              <View style={styles.blockHeader}>
+                <View style={styles.blockIcon}>
+                  <Ionicons name="link-outline" size={18} color="#2563EB" />
+                </View>
+                <View style={styles.blockText}>
+                  <Text style={[styles.kicker, { color: '#2563EB' }]}>Web Link Extractor</Text>
+                  <Text style={styles.blockTitle}>Extract from website URL</Text>
+                  <Text style={styles.blockBody}>
+                    AI will scrape text content from the link.
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.urlInputRow}>
+                <TextInput
+                  style={styles.urlField}
+                  value={urlInput}
+                  onChangeText={setUrlInput}
+                  placeholder="https://example.com/news-story"
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  editable={!busy && !isExtractingUrl}
+                />
+                <TouchableOpacity
+                  style={[styles.urlBtn, (!urlInput.trim() || isExtractingUrl) && styles.urlBtnDisabled]}
+                  onPress={handleExtractUrl}
+                  disabled={busy || isExtractingUrl || !urlInput.trim()}
+                  activeOpacity={0.7}
+                >
+                  {isExtractingUrl ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Ionicons name="download-outline" size={20} color="#FFF" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* PDF Extractor */}
+            <View style={styles.card}>
+              <View style={styles.blockHeader}>
+                <View style={styles.blockIcon}>
+                  <Ionicons name="document-text-outline" size={18} color="#059669" />
+                </View>
+                <View style={styles.blockText}>
+                  <Text style={[styles.kicker, { color: '#059669' }]}>PDF Extractor</Text>
+                  <Text style={styles.blockTitle}>Extract from PDF Document</Text>
+                  <Text style={styles.blockBody}>
+                    AI will parse text content out of your PDF.
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.pdfBtn, isExtractingPdf && styles.pdfBtnActive]}
+                onPress={handleExtractPdf}
+                disabled={busy || isExtractingPdf}
+                activeOpacity={0.7}
+              >
+                {isExtractingPdf ? (
+                  <ActivityIndicator size="small" color="#FFF" style={{ marginRight: 8 }} />
+                ) : (
+                  <Ionicons name="cloud-upload-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                )}
+                <Text style={styles.pdfBtnText}>
+                  {isExtractingPdf ? 'Extracting text...' : pdfName ? `Uploaded: ${pdfName}` : 'Select & Process PDF'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {/* ── Active News Input Preview Banner ────────────────── */}
+        {alertText ? (
+          <GlassCard style={styles.previewBanner}>
+            <View style={styles.previewHeader}>
+              <View style={styles.previewHeaderLeft}>
+                <Text style={styles.previewTitle}>🎯 Loaded Alert Text</Text>
+                {selectedId && (
+                  <View style={styles.activeScenarioBadge}>
+                    <Text style={styles.activeScenarioBadgeTxt}>Scenario Active</Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => { setAlertText(''); setSelectedId(null); }} style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.previewBody} numberOfLines={3}>{alertText}</Text>
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => setEditorOpen(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="create-outline" size={14} color="#2563EB" />
+              <Text style={styles.editBtnTxt}>Edit Alert Text</Text>
+            </TouchableOpacity>
+          </GlassCard>
+        ) : null}
+
 
         <TouchableOpacity
           onPress={handleRun}
@@ -544,4 +791,158 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalSaveText: { fontFamily: FontFamily.semiBold, fontSize: 15, color: '#FFF' },
+
+  urlInputRow: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  urlField: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    fontFamily: FontFamily.regular,
+    color: '#111827',
+    backgroundColor: '#F9FAFB',
+  },
+  urlBtn: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#2563EB',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  urlBtnDisabled: {
+    backgroundColor: '#94A3B8',
+  },
+  pdfBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    backgroundColor: '#059669',
+    borderRadius: 8,
+    marginTop: 12,
+    paddingHorizontal: 12,
+  },
+  pdfBtnActive: {
+    backgroundColor: '#047857',
+  },
+  pdfBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontFamily: FontFamily.semiBold,
+  },
+
+  /* ── Tab Switcher Styles ───────────────────────────── */
+  inputTabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+    gap: 4,
+  },
+  inputTabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  inputTabBtnActive: {
+    backgroundColor: '#2563EB',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  inputTabTxt: {
+    fontSize: 13,
+    fontFamily: FontFamily.medium,
+    color: '#475569',
+  },
+  inputTabTxtActive: {
+    color: '#FFF',
+    fontFamily: FontFamily.semiBold,
+  },
+
+  /* ── Preview Banner Styles ─────────────────────────── */
+  previewBanner: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 99, 235, 0.15)',
+    backgroundColor: 'rgba(239, 246, 255, 0.6)',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  previewHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  previewTitle: {
+    fontFamily: FontFamily.semiBold,
+    fontSize: 13,
+    color: '#1E3A8A',
+  },
+  activeScenarioBadge: {
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 99,
+  },
+  activeScenarioBadgeTxt: {
+    fontFamily: FontFamily.medium,
+    fontSize: 9,
+    color: '#1D4ED8',
+  },
+  clearBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  clearBtnText: {
+    fontFamily: FontFamily.medium,
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  previewBody: {
+    fontFamily: FontFamily.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#334155',
+    marginBottom: 10,
+  },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  editBtnTxt: {
+    fontFamily: FontFamily.medium,
+    fontSize: 12,
+    color: '#2563EB',
+  },
 });
+

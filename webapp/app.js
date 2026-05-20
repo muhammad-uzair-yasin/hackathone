@@ -26,8 +26,8 @@ const PIPELINE_DEF = [
 const PIPELINE_MAX_STEP = 5;
 
 const AGENT_TO_STEP = {
-  'hazard-extractor': 1,
-  'fleet-scout': 2,
+  'hazard-detector': 1,
+  'shipment-analyzer': 2,
   'impact-analyzer': 3,
   'action-planner': 4,
 };

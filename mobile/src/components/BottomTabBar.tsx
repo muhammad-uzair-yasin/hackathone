@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontFamily } from '../theme';
 
-export type TabName = 'News' | 'Fleet' | 'Agent' | 'Outcome';
+export type TabName = 'News' | 'Fleet' | 'Agent' | 'Outcome' | 'Report' | 'Predict';
 
 const INACTIVE = '#9CA3AF';
 const ACTIVE = '#2563EB';
@@ -33,6 +33,20 @@ const TABS: { name: TabName; label: string; icon: (a: boolean) => React.ReactNod
     label: 'Outcome',
     icon: (a) => (
       <Ionicons name="checkmark-circle-outline" size={22} color={a ? ACTIVE : INACTIVE} />
+    ),
+  },
+  {
+    name: 'Report',
+    label: 'Report',
+    icon: (a) => (
+      <Ionicons name="warning-outline" size={22} color={a ? '#DC2626' : INACTIVE} />
+    ),
+  },
+  {
+    name: 'Predict',
+    label: 'Predict',
+    icon: (a) => (
+      <MaterialCommunityIcons name="shield-search" size={22} color={a ? '#7C3AED' : INACTIVE} />
     ),
   },
 ];

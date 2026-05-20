@@ -22,6 +22,7 @@ import type { PipelinePhase, TimelineEvent } from '../types/timeline';
 import type { SubagentStartNotice } from '../types/subagentNotice';
 import { formatAgentHandoff, previewJson } from '../utils/formatAgentHandoff';
 import { mapShipment, type Shipment } from '../types/shipment';
+import { sendShipmentAlert } from '../services/NotificationService';
 
 function snapshotFromShipments(ships: Shipment[], id?: string): OutcomeSnapshot | null {
   const target = id
@@ -79,6 +80,8 @@ export function useAgentStream() {
   const [pipelinePhase, setPipelinePhase] = useState<PipelinePhase>('idle');
   const [outcomeBefore, setOutcomeBefore] = useState<OutcomeSnapshot | null>(null);
   const [outcomeAfter, setOutcomeAfter] = useState<OutcomeSnapshot | null>(null);
+  const [routeBeforeStops, setRouteBeforeStops] = useState<{place:string;lat:number;lon:number}[]>([]);
+  const [routeAfterStops, setRouteAfterStops] = useState<{place:string;lat:number;lon:number}[]>([]);
   const [affectedId, setAffectedId] = useState<string | null>(null);
   const affectedIdRef = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -547,6 +550,14 @@ export function useAgentStream() {
         if (EXECUTION_TOOLS.has(tool)) {
           if (ok) {
             finishExecutionTool(tool, result);
+            // ⚡ Fire real push notification when notify_tool completes
+            if (tool === 'notify_tool') {
+              void sendShipmentAlert({
+                shipmentId: String(result?.shipment_id || affectedIdRef.current || 'Unknown'),
+                message: String(result?.message || ''),
+                outcome: 'rerouted',
+              });
+            }
           } else {
             upsertActivity(tool, {
               label: labelForAgent(tool),
@@ -598,6 +609,12 @@ export function useAgentStream() {
             String(beforeAfter.before.cargo_type || beforeAfter.after.cargo_type || '—');
           setOutcomeBefore(snapshotFromCrmState(beforeAfter.before, cargo));
           setOutcomeAfter(snapshotFromCrmState(beforeAfter.after, cargo));
+
+          // Extract lat/lon route stops for the map
+          const bStops = (beforeAfter.before.route as any[] | undefined) ?? [];
+          const aStops = (beforeAfter.after.route as any[] | undefined) ?? [];
+          if (bStops.length) setRouteBeforeStops(bStops);
+          if (aStops.length) setRouteAfterStops(aStops);
         } else {
           const ships = event.current_shipments as { active_shipments?: Record<string, unknown>[] } | undefined;
           if (ships?.active_shipments) {
@@ -817,6 +834,8 @@ export function useAgentStream() {
     progress,
     outcomeBefore,
     outcomeAfter,
+    routeBeforeStops,
+    routeAfterStops,
     summaryDoc,
     loadSummary,
     affectedId,

@@ -26,6 +26,37 @@ SHIPMENTS_FILE = DATA_DIR / "active_shipments.json"
 BASELINE_SHIPMENTS_FILE = DATA_DIR / "active_shipments_baseline.json"
 NOTIFICATIONS_FILE = DATA_DIR / "notifications.json"
 SUMMARY_FILE = DATA_DIR / "summary.md"
+HISTORY_FILE = DATA_DIR / "history.json"
+
+
+def append_history(event_type: str, payload: dict) -> None:
+    """Append one entry to history.json for the incident log."""
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": event_type,
+        **{k: v for k, v in payload.items() if k not in ("before_state", "after_state")},
+    }
+    # Keep before/after compact summaries
+    if "before_state" in payload:
+        record["before_status"] = (payload["before_state"] or {}).get("current_status", "")
+        record["before_route"] = (payload["before_state"] or {}).get("route_name", "")
+    if "after_state" in payload:
+        record["after_status"] = (payload["after_state"] or {}).get("current_status", "")
+        record["after_route"] = (payload["after_state"] or {}).get("route_name", "")
+
+    existing: dict = {"history": []}
+    if HISTORY_FILE.exists():
+        try:
+            with open(HISTORY_FILE) as f:
+                existing = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    existing.setdefault("history", []).append(record)
+    try:
+        with open(HISTORY_FILE, "w") as f:
+            json.dump(existing, f, indent=2)
+    except OSError:
+        pass
 
 
 def _route_points(shipment: dict, *, alternative_name: str | None = None) -> list:
@@ -215,6 +246,7 @@ def update_crm_tool(
             f"Route: '{before_state.get('route_name')}' → '{record.get('route_name')}'."
         ),
     }
+    append_history("update_crm", result)
 
     return json.dumps(result, indent=2)
 
@@ -229,42 +261,78 @@ def notify_tool(
     shipment_id: str,
     notification_message: str,
     urgency_level: str,
+    driver_message: str = "",
+    coordinator_message: str = "",
 ) -> str:
     """
-    NOTIFICATION SIMULATION: Generates and logs an automated emergency notification
-    to the destination hospital, driver, and dispatch control center.
+    NOTIFICATION SIMULATION: Generates and logs emergency notifications to the
+    driver, destination hospital, and fleet coordinator.
 
-    In a production system this would send a real email/SMS. For the simulation,
-    it writes the notification to notifications.json and returns a confirmation
-    with a generated message ID.
+    In a production system this would send real email/SMS/radio messages.
+    For the simulation, it writes all notifications to notifications.json and
+    returns a confirmation with generated message IDs.
 
     Always call this tool AFTER update_crm_tool has successfully updated the database.
 
     Args:
-        recipient: Who to notify. E.g. 'District 4 General Hospital Administration'.
+        recipient: Hospital/clinic administration name.
         shipment_id: The shipment ID this notification relates to.
-        notification_message: The full notification text to send. Should be professional
-            and include: cargo type, reason for reroute, new destination, and ETA.
+        notification_message: Full email body for the hospital.
         urgency_level: One of 'IMMEDIATE', 'HIGH', 'MEDIUM', 'LOW'.
+        driver_message: Short SMS/radio message for the truck driver.
+        coordinator_message: Operational brief for the fleet coordinator.
 
     Returns:
-        A JSON string with the notification ID, timestamp, and delivery confirmation.
+        A JSON string with notification IDs, timestamps, and delivery confirmation.
     """
     timestamp = datetime.now(timezone.utc).isoformat()
-    notification_id = f"NOTIF-{shipment_id}-{datetime.now().strftime('%H%M%S')}"
+    ts_short = datetime.now().strftime('%H%M%S')
 
-    notification_record = {
-        "notification_id": notification_id,
+    records = []
+
+    # Hospital notification
+    hospital_id = f"NOTIF-{shipment_id}-HOSP-{ts_short}"
+    records.append({
+        "notification_id": hospital_id,
         "timestamp": timestamp,
         "shipment_id": shipment_id,
+        "recipient_type": "hospital",
         "recipient": recipient,
         "urgency_level": urgency_level,
         "status": "SENT (simulated)",
-        "channels": ["email", "sms"],
+        "channels": ["email"],
         "message": notification_message,
-    }
+    })
 
-    # ── Load existing notifications (or start fresh) ─────────────────────────
+    # Driver notification
+    driver_id = f"NOTIF-{shipment_id}-DRVR-{ts_short}"
+    records.append({
+        "notification_id": driver_id,
+        "timestamp": timestamp,
+        "shipment_id": shipment_id,
+        "recipient_type": "driver",
+        "recipient": f"Driver ({shipment_id})",
+        "urgency_level": urgency_level,
+        "status": "SENT (simulated)",
+        "channels": ["sms", "radio"],
+        "message": driver_message or notification_message[:200],
+    })
+
+    # Coordinator notification
+    coord_id = f"NOTIF-{shipment_id}-COORD-{ts_short}"
+    records.append({
+        "notification_id": coord_id,
+        "timestamp": timestamp,
+        "shipment_id": shipment_id,
+        "recipient_type": "coordinator",
+        "recipient": "Fleet Operations Coordinator",
+        "urgency_level": urgency_level,
+        "status": "SENT (simulated)",
+        "channels": ["email", "dashboard"],
+        "message": coordinator_message or notification_message[:300],
+    })
+
+    # Load existing notifications and append
     existing = {"notifications": []}
     if NOTIFICATIONS_FILE.exists():
         try:

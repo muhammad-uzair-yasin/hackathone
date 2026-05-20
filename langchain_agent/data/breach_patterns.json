@@ -1,0 +1,68 @@
+{
+  "cargo_breach_thresholds": {
+    "Insulin": {
+      "max_safe_ambient_celsius": 32,
+      "max_idle_minutes_before_risk": 10,
+      "breach_probability_per_idle_minute": 0.04,
+      "critical_temp_ceiling_celsius": 8,
+      "notes": "Insulin degrades rapidly above 8C. 14+ min idle in 38C ambient = HIGH RISK."
+    },
+    "Saline IVs": {
+      "max_safe_ambient_celsius": 38,
+      "max_idle_minutes_before_risk": 30,
+      "breach_probability_per_idle_minute": 0.01,
+      "critical_temp_ceiling_celsius": 25,
+      "notes": "Saline is more tolerant but extended heat exposure degrades sterility."
+    },
+    "Vaccines": {
+      "max_safe_ambient_celsius": 28,
+      "max_idle_minutes_before_risk": 5,
+      "breach_probability_per_idle_minute": 0.08,
+      "critical_temp_ceiling_celsius": 4,
+      "notes": "Vaccines most sensitive. Any break in cold chain is critical."
+    },
+    "Blood Products": {
+      "max_safe_ambient_celsius": 30,
+      "max_idle_minutes_before_risk": 8,
+      "breach_probability_per_idle_minute": 0.06,
+      "critical_temp_ceiling_celsius": 6,
+      "notes": "Blood products require strict 2-6C range. Vibration also a risk factor."
+    },
+    "default": {
+      "max_safe_ambient_celsius": 35,
+      "max_idle_minutes_before_risk": 20,
+      "breach_probability_per_idle_minute": 0.02,
+      "critical_temp_ceiling_celsius": 15
+    }
+  },
+  "route_risk_factors": {
+    "Thatta_segment": {
+      "avg_delay_minutes": 15,
+      "heat_exposure_multiplier": 1.3,
+      "known_checkpoint_delays": true
+    },
+    "N55_highway": {
+      "avg_delay_minutes": 8,
+      "heat_exposure_multiplier": 1.1,
+      "known_checkpoint_delays": false
+    },
+    "Karachi_urban": {
+      "avg_delay_minutes": 22,
+      "heat_exposure_multiplier": 1.2,
+      "known_checkpoint_delays": true
+    }
+  },
+  "time_risk_multipliers": {
+    "00:00-06:00": 0.7,
+    "06:00-10:00": 0.9,
+    "10:00-14:00": 1.4,
+    "14:00-17:00": 1.5,
+    "17:00-20:00": 1.2,
+    "20:00-24:00": 0.8
+  },
+  "historical_breach_rate": {
+    "summer_months": 0.23,
+    "winter_months": 0.04,
+    "monsoon_months": 0.11
+  }
+}

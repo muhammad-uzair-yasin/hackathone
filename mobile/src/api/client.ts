@@ -72,3 +72,27 @@ export async function fetchSummaryDocument(): Promise<SummaryDocument | null> {
   };
 }
 
+export async function extractTextFromUrl(url: string): Promise<{ success: boolean; text?: string; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/extract/url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to contact backend server' };
+  }
+}
+
+export async function extractTextFromPdf(formData: FormData): Promise<{ success: boolean; text?: string; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/extract/pdf`, {
+      method: 'POST',
+      body: formData,
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to contact backend server' };
+  }
+}

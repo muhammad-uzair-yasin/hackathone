@@ -25,9 +25,12 @@ import FleetScreen from './src/screens/FleetScreen';
 import ShipmentDetailScreen from './src/screens/ShipmentDetailScreen';
 import AgentScreen from './src/screens/AgentScreen';
 import OutcomeVisualization from './src/screens/OutcomeVisualization';
+import DriverReportScreen from './src/screens/DriverReportScreen';
+import PredictionScreen from './src/screens/PredictionScreen';
 import AppDialog from './src/components/AppDialog';
 import type { Shipment } from './src/types/shipment';
 import { Colors } from './src/theme';
+import { setupNotifications, sendShipmentAlert } from './src/services/NotificationService';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -57,6 +60,8 @@ export default function App() {
     progress,
     outcomeBefore,
     outcomeAfter,
+    routeBeforeStops,
+    routeAfterStops,
     summaryDoc,
     loadSummary,
     affectedId,
@@ -87,6 +92,12 @@ export default function App() {
     runAnalysis(text, () => setActiveTab('Agent'));
   };
 
+  // Set up push notifications once on app start
+  useEffect(() => {
+    void setupNotifications();
+  }, []);
+
+  // Navigate to Agent tab when agent starts
   useEffect(() => {
     if (activeTab === 'Outcome' && pipelinePhase === 'complete') {
       void loadSummary();
@@ -162,6 +173,8 @@ export default function App() {
             summaryMarkdown={summaryDoc?.markdown}
             summaryFile={summaryDoc?.file}
             onRefreshSummary={loadSummary}
+            beforeStops={routeBeforeStops}
+            afterStops={routeAfterStops}
             beforeState={
               outcomeBefore
                 ? {
@@ -188,6 +201,17 @@ export default function App() {
             }
           />
         );
+      case 'Report':
+        return (
+          <DriverReportScreen
+            onRunAgent={(text) => {
+              handleRunAgent(text);
+              setActiveTab('Agent');
+            }}
+          />
+        );
+      case 'Predict':
+        return <PredictionScreen />;
     }
   };
 
