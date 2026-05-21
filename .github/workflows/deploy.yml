@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /root/hackathone
+            git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/muhammad-uzair-yasin/hackathone.git
+            git pull origin master
+            git remote set-url origin https://github.com/muhammad-uzair-yasin/hackathone.git
+            /root/.local/bin/uv sync
+            pm2 restart hackathone
