@@ -275,7 +275,7 @@ export function useAgentStream() {
       const why = String(result.why_brief || '');
       let extra = '';
 
-      if (agent === 'fleet-scout' && Array.isArray(result.active_shipments)) {
+      if (agent === 'shipment-analyzer' && Array.isArray(result.active_shipments)) {
         extra = (result.active_shipments as { shipment_id: string; route_name: string }[])
           .map((s) => `${s.shipment_id}: ${s.route_name}`)
           .join(' · ');

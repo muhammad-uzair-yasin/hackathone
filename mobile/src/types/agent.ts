@@ -20,8 +20,8 @@ export interface AgentActivity {
 
 /** Display names for subagents + orchestrator tools */
 export const AGENT_LABELS: Record<string, string> = {
-  'hazard-extractor': 'Hazard Extractor',
-  'fleet-scout': 'Fleet Scout',
+  'hazard-detector': 'Hazard Detector',
+  'shipment-analyzer': 'Shipment Analyzer',
   'impact-analyzer': 'Route Impact',
   'action-planner': 'Action Planner',
   'update_crm_tool': 'Route Update',
@@ -30,8 +30,8 @@ export const AGENT_LABELS: Record<string, string> = {
 };
 
 const AGENT_TODO_KEYWORDS: Record<string, string[]> = {
-  'hazard-extractor': ['hazard', 'extract', 'alert', 'news'],
-  'fleet-scout': ['fleet', 'scout', 'shipment', 'active'],
+  'hazard-detector': ['hazard', 'detect', 'detector', 'alert', 'news'],
+  'shipment-analyzer': ['fleet', 'scout', 'shipment', 'active', 'analyzer'],
   'impact-analyzer': ['impact', 'affected', 'route'],
   'action-planner': ['action', 'plan', 'reroute', 'alternative'],
   update_crm_tool: ['route', 'reroute', 'crm', 'update'],

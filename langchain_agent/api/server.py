@@ -732,12 +732,20 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
         })
 
     except Exception as exc:
+        err_str = str(exc)
         logger.exception("Agent stream failed")
-        yield sse_event("ERROR", {
-            "message": "Agent pipeline encountered an unrecoverable error.",
-            "error": str(exc),
-            "traceback": traceback.format_exc()[-1000:],
-        })
+        if "does not support image" in err_str:
+            yield sse_event("ERROR", {
+                "message": "This AI model does not support image input. Only text-based alerts can be processed.",
+                "error": err_str,
+                "code": "model_no_image_support",
+            })
+        else:
+            yield sse_event("ERROR", {
+                "message": "Agent pipeline encountered an unrecoverable error.",
+                "error": err_str,
+                "traceback": traceback.format_exc()[-1000:],
+            })
     finally:
         logger.info("═══ Agent stream finished ═══")
 
@@ -1445,11 +1453,19 @@ async def _run_prediction_stream() -> AsyncGenerator[str, None]:
         })
 
     except Exception as exc:
+        err_str = str(exc)
         logger.exception("Prediction stream failed")
-        yield sse_event("ERROR", {
-            "message": "Prediction pipeline encountered an error.",
-            "error": str(exc),
-        })
+        if "does not support image" in err_str:
+            yield sse_event("ERROR", {
+                "message": "This AI model does not support image input. Only text-based data can be processed.",
+                "error": err_str,
+                "code": "model_no_image_support",
+            })
+        else:
+            yield sse_event("ERROR", {
+                "message": "Prediction pipeline encountered an error.",
+                "error": err_str,
+            })
     finally:
         _scheduler_state["is_running"] = False
         logger.info("═══ Prediction stream finished ═══")

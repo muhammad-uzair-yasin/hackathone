@@ -85,7 +85,7 @@ export default function VoiceInputButton({ onTranscript, disabled }: Props) {
       (NativeModules.ExponentAV || NativeModules.ExponentAVModule || NativeModules.ExpoAV)
     );
     if (!hasExponentAV) {
-      console.warn('[VoiceInputButton] ExponentAV native module not found, disabling voice input.');
+      // expo-av not available in Expo Go — voice input disabled
       setIsSupported(false);
       return;
     }

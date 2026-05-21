@@ -8,6 +8,7 @@ from pathlib import Path
 
 from deepagents import create_deep_agent
 from deepagents.backends import CompositeBackend, FilesystemBackend, StateBackend
+from deepagents.middleware.filesystem import FilesystemPermission
 from langchain.agents.middleware import ModelRetryMiddleware, ToolRetryMiddleware
 
 from langchain_agent.schemas import (
@@ -239,6 +240,15 @@ MIDDLEWARE = [
 ]
 
 
+AGENT_PERMISSIONS = [
+    FilesystemPermission(
+        operations=["read"],
+        paths=["/data/**/*.png", "/data/**/*.jpg", "/data/**/*.jpeg", "/data/**/*.gif", "/data/**/*.webp", "/data/**/*.bmp"],
+        mode="deny",
+    ),
+]
+
+
 def build_agent():
     return create_deep_agent(
         model=claude_fast,
@@ -248,6 +258,7 @@ def build_agent():
         system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
         middleware=MIDDLEWARE,
         backend=backend,
+        permissions=AGENT_PERMISSIONS,
     )
 
 

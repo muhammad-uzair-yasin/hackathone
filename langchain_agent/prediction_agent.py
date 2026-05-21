@@ -24,6 +24,7 @@ from pathlib import Path
 
 from deepagents import create_deep_agent
 from deepagents.backends import CompositeBackend, FilesystemBackend, StateBackend
+from deepagents.middleware.filesystem import FilesystemPermission
 from langchain.agents.middleware import ModelRetryMiddleware, ToolRetryMiddleware
 from langchain.tools import tool
 
@@ -348,6 +349,15 @@ PRED_MIDDLEWARE = [
 # Agent builder — same singleton pattern as agent.py
 # ─────────────────────────────────────────────────────────────────────────────
 
+PRED_AGENT_PERMISSIONS = [
+    FilesystemPermission(
+        operations=["read"],
+        paths=["/data/**/*.png", "/data/**/*.jpg", "/data/**/*.jpeg", "/data/**/*.gif", "/data/**/*.webp", "/data/**/*.bmp"],
+        mode="deny",
+    ),
+]
+
+
 def build_prediction_agent():
     """Build and return the Prediction Orchestrator deep agent."""
     return create_deep_agent(
@@ -358,6 +368,7 @@ def build_prediction_agent():
         system_prompt=PRED_ORCHESTRATOR_PROMPT,
         middleware=PRED_MIDDLEWARE,
         backend=pred_backend,
+        permissions=PRED_AGENT_PERMISSIONS,
     )
 
 

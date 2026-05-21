@@ -6,12 +6,12 @@ export function formatAgentHandoff(agent: string, result: Record<string, unknown
   if (summary) lines.push(`Summary: ${summary}`);
   if (why) lines.push(`Why: ${why}`);
 
-  if (agent === 'hazard-extractor') {
+  if (agent === 'hazard-detector') {
     if (result.hazard_detected != null) lines.push(`Hazard: ${result.hazard_detected ? 'yes' : 'no'}`);
     if (result.location) lines.push(`Location: ${result.location}`);
     if (result.affected_routes) lines.push(`Routes: ${String(result.affected_routes)}`);
   }
-  if (agent === 'fleet-scout' && Array.isArray(result.active_shipments)) {
+  if (agent === 'shipment-analyzer' && Array.isArray(result.active_shipments)) {
     const ids = (result.active_shipments as { shipment_id: string; route_name: string }[])
       .map((s) => `${s.shipment_id} (${s.route_name})`)
       .join(', ');

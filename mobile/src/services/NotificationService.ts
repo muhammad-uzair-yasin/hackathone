@@ -29,7 +29,7 @@ try {
     });
   }
 } catch (e) {
-  console.warn('[Notifications] Failed to load expo-notifications (expected in Expo Go SDK 53+):', e);
+  // Expected in Expo Go SDK 53+ — remote push notifications removed
 }
 
 /**
@@ -38,7 +38,6 @@ try {
  */
 export async function setupNotifications(): Promise<boolean> {
   if (!Notifications) {
-    console.warn('[Notifications] Notification system is inactive (Expo Go fallback)');
     return false;
   }
 
@@ -50,7 +49,6 @@ export async function setupNotifications(): Promise<boolean> {
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#DC2626',
-        sound: 'default',
       });
     }
 
@@ -99,7 +97,6 @@ export async function sendShipmentAlert({
         title: '⚡ BioRoute Alert',
         body,
         data: { shipmentId, outcome },
-        sound: 'default',
         badge: 1,
       },
       trigger: null, // fire immediately
@@ -137,7 +134,6 @@ export async function sendRiskAlert({
         title: `${icon} BioRoute Risk Alert — ${shipmentId}`,
         body: summary,
         data: { shipmentId, riskLevel },
-        sound: 'default',
       },
       trigger: null,
     });

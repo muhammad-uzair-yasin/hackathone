@@ -35,7 +35,7 @@ hackathone/
 
 ```bash
 # From project root
-uv run uvicorn langchain_agent.api.server:app --reload --port 8000
+uv run uvicorn langchain_agent.api.server:app --reload --port 8001
 ```
 
 The API will be available at `http://localhost:8000`.

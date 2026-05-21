@@ -4,8 +4,8 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
 import type { SubagentStartNotice } from '../types/subagentNotice';
 
 const AGENT_ICONS: Record<string, string> = {
-  'hazard-extractor': '⚠️',
-  'fleet-scout': '🚚',
+  'hazard-detector': '⚠️',
+  'shipment-analyzer': '🚚',
   'impact-analyzer': '📊',
   'action-planner': '🗺️',
 };
