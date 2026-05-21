@@ -178,7 +178,13 @@ hackathone/
 
 ---
 
-## 🚀 Quick Start
+## ⚠️ Demo Note
+
+This project uses **realistic mock data** for demonstration purposes. The shipment fleet (`active_shipments.json`), sensor telemetry, and breach history are all simulated to showcase the full AI pipeline end-to-end. In a production deployment, these would connect to real GPS tracking APIs, IoT temperature sensors, and a live logistics CRM.
+
+---
+
+
 
 **Backend:**
 ```bash
