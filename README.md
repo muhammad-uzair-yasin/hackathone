@@ -108,7 +108,7 @@ Mobile App (React Native / Expo) — Live SSE Stream
 
 | Service | Usage |
 |---|---|
-| **Pollinations.ai** | LLM provider — OpenAI-compatible proxy for `claude-fast` model |
+| **Pollinations.ai** | LLM provider — OpenAI-compatible API for Claude Haiku 4.5 |
 | **Pollinations Whisper** | Speech-to-text for voice input (driver reports + news alerts) |
 | **Pollinations TTS** | Text-to-speech for agent responses |
 | **OpenStreetMap / CARTO** | Leaflet map tiles for route visualization |
@@ -138,7 +138,7 @@ Mobile App (React Native / Expo) — Live SSE Stream
 | Layer | Technology |
 |---|---|
 | Agent Framework | Google Antigravity Deep Agents (`deepagents` SDK) |
-| LLM | `claude-fast` via Pollinations.ai (OpenAI-compatible) |
+| LLM | Claude Haiku 4.5 (via Pollinations.ai OpenAI-compatible API) |
 | Backend | FastAPI + uvicorn (Python 3.13) |
 | Streaming | Server-Sent Events (SSE) |
 | Mobile | React Native + Expo SDK 55 |
