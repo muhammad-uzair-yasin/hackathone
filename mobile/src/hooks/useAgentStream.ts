@@ -641,7 +641,9 @@ export function useAgentStream() {
           ? 'Reroute complete'
           : outcome === 'all_clear'
             ? 'All clear'
-            : 'Analysis complete';
+            : outcome === 'chat'
+              ? 'RouteWise AI'
+              : 'Analysis complete';
         appendTimeline({
           kind: 'complete',
           ts,
@@ -649,7 +651,7 @@ export function useAgentStream() {
           body: msg,
           status: 'done',
         });
-        void loadSummary();
+        if (outcome !== 'chat') void loadSummary();
         return;
       }
 

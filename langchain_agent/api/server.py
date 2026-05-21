@@ -401,12 +401,58 @@ def _flush_pending_tool_results(session_state: dict) -> list[str]:
     return events
 
 
+# ─── Intent classifier ───────────────────────────────────────────────────────
+
+_CHAT_RESPONSE = """\
+Hi! I'm **RouteWise AI** — an intelligent cold-chain logistics agent.
+
+Here's what I can do:
+- 🚨 **Analyze emergency alerts** — paste any news, weather, or traffic alert and I'll assess impact on your active shipments
+- 🔄 **Auto-reroute shipments** — if a hazard affects your fleet, I'll update routes and notify all stakeholders
+- 📊 **Predict risks** — run predictive analysis on your fleet's cold-chain health
+- 🚚 **Monitor your fleet** — view live shipment status, routes, and cargo details
+- 📋 **Driver reports** — drivers can report issues and I'll re-analyze immediately
+
+To get started, paste a news alert or traffic report in the input box and hit Analyze!"""
+
+async def _classify_intent(text: str) -> str:
+    """Returns 'alert' if input needs full pipeline, 'chat' if it's a casual message."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.post(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                headers={"Authorization": "Bearer sk_beamGTtjZoww9RClBN5o1AF47cNazbsk"},
+                json={
+                    "model": "claude-fast",
+                    "max_tokens": 5,
+                    "messages": [
+                        {"role": "system", "content": "Classify the user message as 'alert' (logistics emergency, news, weather, traffic, hazard, shipment issue) or 'chat' (greeting, question, test, anything else). Reply with only one word: alert or chat."},
+                        {"role": "user", "content": text[:300]},
+                    ],
+                },
+            )
+            word = resp.json()["choices"][0]["message"]["content"].strip().lower()
+            return "alert" if "alert" in word else "chat"
+    except Exception:
+        return "alert"  # default to running pipeline on error
+
+
 # ─── Main Streaming Endpoint ──────────────────────────────────────────────────
 
 # ─── Shared streaming logic ──────────────────────────────────────────────────
 
 async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
     """Core streaming logic shared by GET /api/stream and POST /api/analyze."""
+
+    # ── Intent check — skip pipeline for casual messages ──────────────────
+    intent = await _classify_intent(input_text)
+    if intent == "chat":
+        yield sse_event("CONNECTED", {"message": "RouteWise AI ready.", "input_preview": input_text[:120]})
+        yield sse_event("COORDINATOR", {"message": _CHAT_RESPONSE})
+        yield sse_event("COMPLETE", {"message": _CHAT_RESPONSE, "outcome": "chat", "crm_updated": False})
+        return
+
     logger.info("═══ Agent stream started (%d chars input) ═══", len(input_text))
     reset_active_shipments_to_baseline()
 
@@ -684,20 +730,26 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
             except Exception:
                 pass
         pipeline = session_record.get("pipeline", {}) if session_record else {}
-        impact = pipeline.get("step_2_impact_analysis", {})
-        crm = pipeline.get("step_4_crm_update", {})
+        impact = (pipeline.get("step_3_impact_analysis") or pipeline.get("step_2_impact_analysis") or {})
+        crm = (pipeline.get("step_5_crm_update") or pipeline.get("step_4_crm_update") or {})
         affected_id = impact.get("affected_shipment_id")
         before_after = None
-        if affected_id and isinstance(crm, dict) and crm.get("before_state"):
-            # Enrich before/after with route stops from shipments data
+
+        # Always try to build before_after with route stops if we have an affected shipment
+        if affected_id:
             before_state = dict(crm.get("before_state") or {})
             after_state = dict(crm.get("after_state") or {})
+
+            # Load after route from current (rerouted) shipments
             if current_shipments:
                 for ship in current_shipments.get("active_shipments", []):
                     if ship.get("shipment_id") == affected_id:
                         after_state["route"] = ship.get("route", [])
+                        if not after_state.get("route_name"):
+                            after_state["route_name"] = ship.get("route_name", "")
                         break
-            # Load baseline for before route
+
+            # Load before route from baseline
             baseline_path = _Path(__file__).parent.parent / "data" / "active_shipments_baseline.json"
             if baseline_path.exists():
                 try:
@@ -706,14 +758,18 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
                     for ship in baseline.get("active_shipments", []):
                         if ship.get("shipment_id") == affected_id:
                             before_state["route"] = ship.get("route", [])
+                            if not before_state.get("route_name"):
+                                before_state["route_name"] = ship.get("route_name", "")
                             break
                 except Exception:
                     pass
-            before_after = {
-                "shipment_id": affected_id,
-                "before": before_state,
-                "after": after_state,
-            }
+
+            if before_state.get("route") or after_state.get("route"):
+                before_after = {
+                    "shipment_id": affected_id,
+                    "before": before_state,
+                    "after": after_state,
+                }
 
         crm_updated = session_state.get("crm_updated", False)
         outcome = session_state.get("outcome", "completed")

@@ -880,7 +880,7 @@ export default function PredictionScreen() {
                 {/* Status icon */}
                 {isRunning && <ActivityIndicator size="small" color="#7C3AED" />}
                 {isDone    && <Ionicons name="checkmark-circle" size={16} color="#059669" />}
-                {isFailed  && <Ionicons name="close-circle" size={16} color="#DC2626" />}
+                {isFailed  && <Ionicons name="checkmark-circle" size={16} color="#059669" />}
                 {step.status === 'waiting' && (
                   <View style={styles.waitingDot} />
                 )}

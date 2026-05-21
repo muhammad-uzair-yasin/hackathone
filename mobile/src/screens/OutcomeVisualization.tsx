@@ -311,7 +311,7 @@ export default function OutcomeVisualization({
       )}
 
       {summaryMarkdown ? (
-        <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} defaultOpen />
+        <ReasonMarkdownPanel markdown={summaryMarkdown} fileName={summaryFile} />
       ) : null}
 
       {/* ── Before / After Toggle ────────────────────────── */}
