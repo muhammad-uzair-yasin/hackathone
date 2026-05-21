@@ -2,7 +2,7 @@
  * DriverReportScreen — Two-way communication: driver reports an issue.
  * Submits to POST /api/driver-report → returns synthetic alert + re-analyze option.
  */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Platform,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '../components/GlassCard';
@@ -24,12 +25,12 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL
 
 const SHIPMENT_IDS = ['SHP-882', 'SHP-901', 'SHP-915', 'SHP-928'];
 const ISSUE_TYPES = [
-  { id: 'breakdown',   label: '🔧 Vehicle Breakdown',      color: '#DC2626' },
-  { id: 'delay',       label: '⏱️ Traffic / Delay',         color: '#D97706' },
-  { id: 'temperature', label: '🌡️ Temperature Breach',      color: '#7C3AED' },
-  { id: 'accident',    label: '🚨 Road Accident',           color: '#DC2626' },
-  { id: 'fuel',        label: '⛽ Fuel Emergency',          color: '#B45309' },
-  { id: 'other',       label: '📋 Other Issue',             color: '#6B7280' },
+  { id: 'breakdown',   label: '🔧 Vehicle Breakdown',      color: '#DC2626', prefill: 'Vehicle has broken down on the road. Engine failure / flat tyre. Cargo refrigeration unit is still running. Need immediate roadside assistance and possible cargo transfer.' },
+  { id: 'delay',       label: '⏱️ Traffic / Delay',         color: '#D97706', prefill: 'Heavy traffic congestion ahead. Road is blocked and movement is very slow. Estimated delay is 30–60 minutes. Cargo temperature is stable for now.' },
+  { id: 'temperature', label: '🌡️ Temperature Breach',      color: '#7C3AED', prefill: 'Temperature inside the cargo unit has exceeded safe limits. Refrigeration alarm is active. Cargo is at risk of spoilage. Need urgent reroute to nearest cold storage facility.' },
+  { id: 'accident',    label: '🚨 Road Accident',           color: '#DC2626', prefill: 'Road accident ahead is blocking all lanes. Police and emergency services are on scene. Traffic is being diverted. Need alternative route instructions immediately.' },
+  { id: 'fuel',        label: '⛽ Fuel Emergency',          color: '#B45309', prefill: 'Fuel level is critically low. Nearest fuel station is unknown. Vehicle may stop within 10–15 km. Need directions to nearest fuel station or emergency fuel delivery.' },
+  { id: 'other',       label: '📋 Other Issue',             color: '#6B7280', prefill: 'Please describe the issue in detail — what happened, current situation, and what assistance is needed.' },
 ];
 
 interface ReportResult {
@@ -45,12 +46,67 @@ interface Props {
 export default function DriverReportScreen({ onRunAgent }: Props) {
   const [shipmentId, setShipmentId] = useState(SHIPMENT_IDS[0]);
   const [issueType, setIssueType] = useState(ISSUE_TYPES[0].id);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(ISSUE_TYPES[0].prefill);
   const [location, setLocation] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ReportResult | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [showShipmentDrop, setShowShipmentDrop] = useState(false);
+  const [showIssueDrop, setShowIssueDrop] = useState(false);
+  const recordingRef = useRef<any>(null);
 
   const selectedIssue = ISSUE_TYPES.find(i => i.id === issueType)!;
+
+  const handleIssueSelect = (id: string) => {
+    setIssueType(id);
+    const issue = ISSUE_TYPES.find(i => i.id === id)!;
+    setDescription(issue.prefill);
+  };
+
+  const handleMicPress = async () => {
+    if (recording) {
+      // Stop recording and transcribe
+      setRecording(false);
+      setTranscribing(true);
+      try {
+        const { Audio } = require('expo-av');
+        const rec = recordingRef.current;
+        await rec.stopAndUnloadAsync();
+        const uri = rec.getURI();
+        recordingRef.current = null;
+
+        const formData = new FormData();
+        formData.append('audio', { uri, name: 'report.m4a', type: 'audio/m4a' } as any);
+
+        const res = await fetch(`${API_BASE}/api/voice/transcribe`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.transcript) {
+          setDescription(prev => prev ? `${prev}\n${data.transcript}` : data.transcript);
+        }
+      } catch (e) {
+        Alert.alert('Transcription failed', 'Could not process audio. Please type your report.');
+      }
+      setTranscribing(false);
+    } else {
+      // Start recording
+      try {
+        const { Audio } = require('expo-av');
+        await Audio.requestPermissionsAsync();
+        await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+        const { recording: rec } = await Audio.Recording.createAsync(
+          Audio.RecordingOptionsPresets.HIGH_QUALITY
+        );
+        recordingRef.current = rec;
+        setRecording(true);
+      } catch (e) {
+        Alert.alert('Microphone unavailable', 'Could not access microphone on this device.');
+      }
+    }
+  };
 
   const handleSubmit = async () => {
     if (!description.trim()) {
@@ -150,38 +206,49 @@ export default function DriverReportScreen({ onRunAgent }: Props) {
 
       {/* Shipment Selector */}
       <Text style={styles.sectionLabel}>SHIPMENT ID</Text>
-      <View style={styles.chipRow}>
-        {SHIPMENT_IDS.map(id => (
-          <TouchableOpacity
-            key={id}
-            style={[styles.chip, shipmentId === id && styles.chipActive]}
-            onPress={() => setShipmentId(id)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.chipTxt, shipmentId === id && styles.chipTxtActive]}>{id}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TouchableOpacity style={styles.dropdown} onPress={() => setShowShipmentDrop(true)} activeOpacity={0.8}>
+        <Text style={styles.dropdownValue}>{shipmentId}</Text>
+        <Ionicons name="chevron-down" size={16} color="#6B7280" />
+      </TouchableOpacity>
 
       {/* Issue Type */}
       <Text style={styles.sectionLabel}>ISSUE TYPE</Text>
-      <View style={styles.issueGrid}>
-        {ISSUE_TYPES.map(issue => (
-          <TouchableOpacity
-            key={issue.id}
-            style={[
-              styles.issueCard,
-              issueType === issue.id && { borderColor: issue.color, backgroundColor: `${issue.color}10` },
-            ]}
-            onPress={() => setIssueType(issue.id)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.issueTxt, issueType === issue.id && { color: issue.color }]}>
-              {issue.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TouchableOpacity style={styles.dropdown} onPress={() => setShowIssueDrop(true)} activeOpacity={0.8}>
+        <Text style={styles.dropdownValue}>{selectedIssue.label}</Text>
+        <Ionicons name="chevron-down" size={16} color="#6B7280" />
+      </TouchableOpacity>
+
+      {/* Shipment Dropdown Modal */}
+      <Modal visible={showShipmentDrop} transparent animationType="fade" onRequestClose={() => setShowShipmentDrop(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowShipmentDrop(false)}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Select Shipment</Text>
+            {SHIPMENT_IDS.map(id => (
+              <TouchableOpacity key={id} style={[styles.modalItem, shipmentId === id && styles.modalItemActive]}
+                onPress={() => { setShipmentId(id); setShowShipmentDrop(false); }}>
+                <Text style={[styles.modalItemTxt, shipmentId === id && styles.modalItemTxtActive]}>{id}</Text>
+                {shipmentId === id && <Ionicons name="checkmark" size={16} color={Page.primary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Issue Dropdown Modal */}
+      <Modal visible={showIssueDrop} transparent animationType="fade" onRequestClose={() => setShowIssueDrop(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowIssueDrop(false)}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Select Issue Type</Text>
+            {ISSUE_TYPES.map(issue => (
+              <TouchableOpacity key={issue.id} style={[styles.modalItem, issueType === issue.id && styles.modalItemActive]}
+                onPress={() => { handleIssueSelect(issue.id); setShowIssueDrop(false); }}>
+                <Text style={[styles.modalItemTxt, issueType === issue.id && { color: issue.color }]}>{issue.label}</Text>
+                {issueType === issue.id && <Ionicons name="checkmark" size={16} color={issue.color} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Location */}
       <Text style={styles.sectionLabel}>CURRENT LOCATION (optional)</Text>
@@ -197,7 +264,24 @@ export default function DriverReportScreen({ onRunAgent }: Props) {
       </View>
 
       {/* Description */}
-      <Text style={styles.sectionLabel}>DESCRIPTION *</Text>
+      <View style={styles.descHeader}>
+        <Text style={styles.sectionLabel}>DESCRIPTION *</Text>
+        <TouchableOpacity
+          style={[styles.micBtn, recording && styles.micBtnActive]}
+          onPress={handleMicPress}
+          disabled={transcribing}
+          activeOpacity={0.8}
+        >
+          {transcribing ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Ionicons name={recording ? 'stop-circle' : 'mic'} size={16} color="#FFF" />
+          )}
+          <Text style={styles.micTxt}>
+            {transcribing ? 'Transcribing…' : recording ? 'Stop' : 'Voice'}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.textAreaWrap}>
         <TextInput
           style={styles.textArea}
@@ -266,7 +350,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
   },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
+  dropdown: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 14, paddingVertical: 13, marginBottom: 18,
+  },
+  dropdownValue: { fontFamily: FontFamily.medium, fontSize: 14, color: '#111827' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 24 },
+  modalBox: { backgroundColor: '#FFF', borderRadius: 16, overflow: 'hidden', paddingVertical: 8 },
+  modalTitle: { fontFamily: FontFamily.semiBold, fontSize: 13, color: '#9CA3AF', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  modalItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  modalItemActive: { backgroundColor: '#EFF6FF' },
+  modalItemTxt: { fontFamily: FontFamily.medium, fontSize: 14, color: '#374151' },
+  modalItemTxtActive: { color: Page.primary },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -306,6 +402,10 @@ const styles = StyleSheet.create({
     color: '#111827',
     paddingVertical: 12,
   },
+  descHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, marginTop: 4 },
+  micBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Page.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99 },
+  micBtnActive: { backgroundColor: '#DC2626' },
+  micTxt: { fontFamily: FontFamily.semiBold, fontSize: 11, color: '#FFF' },
   textAreaWrap: {
     backgroundColor: '#F9FAFB',
     borderRadius: 10,

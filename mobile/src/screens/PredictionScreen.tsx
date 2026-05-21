@@ -26,6 +26,7 @@ import GlassCard from '../components/GlassCard';
 import ScreenHeader from '../components/ScreenHeader';
 import RiskHistoryChart from '../components/RiskHistoryChart';
 import { FontFamily, pageStyles, Page } from '../theme';
+import { sendRiskAlert } from '../services/NotificationService';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL
   ?? Platform.select({ android: 'http://10.0.2.2:8000', ios: 'http://localhost:8000', default: 'http://localhost:8000' });
@@ -668,15 +669,29 @@ export default function PredictionScreen() {
               s.agent === evt.agent ? { ...s, message: evt.message } : s
             ));
           } else if (type === 'SUBAGENT_DONE') {
-            setPipelineSteps(prev => prev.map(s =>
-              s.agent === evt.agent
-                ? { ...s, status: evt.status === 'completed' ? 'done' : 'failed', message: undefined }
-                : s
-            ));
+            setPipelineSteps(prev => prev.map(s => {
+              if (s.agent !== evt.agent) return s;
+              // Don't overwrite a completed step with a failed status
+              if (s.status === 'done' && evt.status !== 'completed') return s;
+              return { ...s, status: evt.status === 'completed' ? 'done' : 'failed', message: undefined };
+            }));
           } else if (type === 'PRED_COORDINATOR') {
             setCoordMsg(evt.message ?? null);
           } else if (type === 'PRED_COMPLETE') {
-            if (evt.predictions) setPredictions(evt.predictions);
+            if (evt.predictions) {
+              setPredictions(evt.predictions);
+              // Trigger mobile push notifications for critical/high risk shipments
+              const criticalOrHigh = (evt.predictions as any[]).filter(
+                (p) => p.risk_level === 'CRITICAL' || p.risk_level === 'HIGH'
+              );
+              for (const p of criticalOrHigh) {
+                void sendRiskAlert({
+                  shipmentId: p.shipment_id,
+                  riskLevel: p.risk_level,
+                  summary: `Risk score: ${p.final_risk_score}/100\nUrgency: ${p.action_urgency}\nAction: ${p.recommended_action}`,
+                });
+              }
+            }
             if (evt.last_run)    setLastRun(evt.last_run);
             if (evt.run_count)   setRunCount(evt.run_count);
             // Mark all steps done

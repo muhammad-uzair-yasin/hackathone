@@ -79,17 +79,7 @@ export default function VoiceInputButton({ onTranscript, disabled }: Props) {
 
   // ── Lazy load expo-av ──────────────────────────────────────────────────────
   useEffect(() => {
-    // Check if ExponentAV native module exists (avoid loading expo-av if it doesn't)
-    const hasExponentAV = !!(
-      NativeModules &&
-      (NativeModules.ExponentAV || NativeModules.ExponentAVModule || NativeModules.ExpoAV)
-    );
-    if (!hasExponentAV) {
-      // expo-av not available in Expo Go — voice input disabled
-      setIsSupported(false);
-      return;
-    }
-
+    // Try loading expo-av directly — if it fails, native module isn't available
     try {
       const ExpoAV = require('expo-av');
       if (ExpoAV && ExpoAV.Audio) {
@@ -98,7 +88,6 @@ export default function VoiceInputButton({ onTranscript, disabled }: Props) {
         setIsSupported(false);
       }
     } catch (e) {
-      console.warn('[VoiceInputButton] Failed to load expo-av:', e);
       setIsSupported(false);
     }
   }, []);

@@ -201,7 +201,12 @@ Always keep the user's FULL RAW ALERT TEXT (the original news message).
 4. If hazard_detected: task('impact-analyzer', paste FULL raw alert text, then shipment-analyzer JSON — no hazard JSON)
 5. If impact_detected AND (requires_immediate_action OR risk_level HIGH/CRITICAL):
    task('action-planner', paste FULL raw alert text + impact-analyzer JSON — no hazard JSON)
-6. If action urgency IMMEDIATE or SOON: update_crm_tool (updates route in fleet DB) then notify_tool
+6. If action urgency IMMEDIATE or SOON: update_crm_tool (updates route in fleet DB) then notify_tool.
+   For notify_tool, write 4 proper email-style messages in plain, simple language anyone can understand:
+   - notification_message (hospital): Subject + formal email body. Explain what happened, what changed, new ETA. No jargon.
+   - driver_message: Short, direct SMS. Tell driver exactly what road to take now and why. Max 3 sentences.
+   - coordinator_message: Operational email. Include shipment ID, old route, new route, reason, cargo risk, actions taken.
+   - owner_message: Executive email. Simple language — what went wrong, what the AI did, outcome. No technical details. Reassuring tone.
 7. write_summary_tool last — short plain-English summary (3–6 sentences) for summary.md:
    what the alert said, what you found, what action you took (or all clear).
    Pass hazard_data, fleet_data, impact_data, action_data, crm_update_result, notification_result as JSON strings.

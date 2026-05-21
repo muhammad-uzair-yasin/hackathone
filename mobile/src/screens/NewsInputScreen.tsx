@@ -204,7 +204,7 @@ export default function NewsInputScreen({
             </View>
             <View>
               <View style={styles.brandRow}>
-                <Text style={styles.brand}>Logistics Agent</Text>
+                <Text style={styles.brand}>RouteWise AI</Text>
                 <Text style={styles.version}>v1.0</Text>
               </View>
               <View style={styles.statusRow}>

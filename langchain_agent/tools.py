@@ -137,10 +137,11 @@ def reset_active_shipments_to_baseline() -> bool:
 
 def reset_demo_session() -> dict:
     """
-    Full demo reset for re-testing: CRM shipments, notifications, decision log.
+    Full demo reset for re-testing: CRM shipments, notifications, decision log, predictions.
     """
     shipments_ok = reset_active_shipments_to_baseline()
     notifications_ok = False
+    predictions_ok = False
     try:
         NOTIFICATIONS_FILE.write_text(
             json.dumps({"notifications": []}, indent=2) + "\n",
@@ -149,12 +150,22 @@ def reset_demo_session() -> dict:
         notifications_ok = True
     except OSError:
         pass
+    try:
+        from langchain_agent.prediction_agent import PREDICTIONS_FILE, DATA_DIR
+        PREDICTIONS_FILE.write_text(json.dumps({"predictions": [], "run_count": 0}, indent=2), encoding="utf-8")
+        history_file = DATA_DIR / "prediction_history.json"
+        if history_file.exists():
+            history_file.write_text("[]", encoding="utf-8")
+        predictions_ok = True
+    except Exception:
+        pass
     return {
         "ok": shipments_ok and notifications_ok,
         "shipments_reset": shipments_ok,
         "notifications_cleared": notifications_ok,
+        "predictions_cleared": predictions_ok,
         "summary_cleared": True,
-        "message": "Demo reset — CRM, notifications, and summary restored.",
+        "message": "Demo reset — CRM, notifications, predictions, and summary restored.",
     }
 
 
@@ -263,102 +274,125 @@ def notify_tool(
     urgency_level: str,
     driver_message: str = "",
     coordinator_message: str = "",
+    owner_message: str = "",
 ) -> str:
     """
-    NOTIFICATION SIMULATION: Generates and logs emergency notifications to the
-    driver, destination hospital, and fleet coordinator.
+    NOTIFICATION SIMULATION: Writes 4 email-style notifications to notifications.json —
+    one each for the hospital, driver, fleet coordinator, and company owner.
 
-    In a production system this would send real email/SMS/radio messages.
-    For the simulation, it writes all notifications to notifications.json and
-    returns a confirmation with generated message IDs.
-
-    Always call this tool AFTER update_crm_tool has successfully updated the database.
+    Always call this AFTER update_crm_tool.
 
     Args:
-        recipient: Hospital/clinic administration name.
-        shipment_id: The shipment ID this notification relates to.
-        notification_message: Full email body for the hospital.
-        urgency_level: One of 'IMMEDIATE', 'HIGH', 'MEDIUM', 'LOW'.
-        driver_message: Short SMS/radio message for the truck driver.
-        coordinator_message: Operational brief for the fleet coordinator.
+        recipient: Hospital/clinic name.
+        shipment_id: Shipment ID.
+        notification_message: Full email body for the hospital (subject + body).
+        urgency_level: 'IMMEDIATE', 'HIGH', 'MEDIUM', or 'LOW'.
+        driver_message: SMS/radio message for the driver with new route instructions.
+        coordinator_message: Operational email for the fleet coordinator.
+        owner_message: Executive summary email for the company owner.
 
     Returns:
-        A JSON string with notification IDs, timestamps, and delivery confirmation.
+        JSON string with notification IDs and delivery confirmation.
     """
     timestamp = datetime.now(timezone.utc).isoformat()
     ts_short = datetime.now().strftime('%H%M%S')
 
-    records = []
+    records = [
+        {
+            "notification_id": f"NOTIF-{shipment_id}-HOSP-{ts_short}",
+            "timestamp": timestamp,
+            "shipment_id": shipment_id,
+            "recipient_type": "hospital",
+            "recipient": recipient,
+            "urgency_level": urgency_level,
+            "status": "SENT (simulated)",
+            "channels": ["email"],
+            "subject": f"[URGENT] Shipment {shipment_id} — Route Change & Updated Delivery Time",
+            "message": notification_message,
+        },
+        {
+            "notification_id": f"NOTIF-{shipment_id}-DRVR-{ts_short}",
+            "timestamp": timestamp,
+            "shipment_id": shipment_id,
+            "recipient_type": "driver",
+            "recipient": f"Driver — Truck {shipment_id}",
+            "urgency_level": urgency_level,
+            "status": "SENT (simulated)",
+            "channels": ["sms", "radio"],
+            "subject": f"ACTION REQUIRED: New Route for {shipment_id}",
+            "message": driver_message or f"ROUTE CHANGE for {shipment_id}. Do NOT continue on current road. Follow new route instructions from your GPS. Cargo is time-sensitive. Confirm receipt immediately.",
+        },
+        {
+            "notification_id": f"NOTIF-{shipment_id}-COORD-{ts_short}",
+            "timestamp": timestamp,
+            "shipment_id": shipment_id,
+            "recipient_type": "coordinator",
+            "recipient": "Fleet Operations Coordinator",
+            "urgency_level": urgency_level,
+            "status": "SENT (simulated)",
+            "channels": ["email", "dashboard"],
+            "subject": f"[Fleet Alert] Emergency Reroute Executed — {shipment_id}",
+            "message": coordinator_message or notification_message[:400],
+        },
+        {
+            "notification_id": f"NOTIF-{shipment_id}-OWNR-{ts_short}",
+            "timestamp": timestamp,
+            "shipment_id": shipment_id,
+            "recipient_type": "owner",
+            "recipient": "Company Owner / CEO",
+            "urgency_level": urgency_level,
+            "status": "SENT (simulated)",
+            "channels": ["email"],
+            "subject": f"[Executive Alert] Shipment {shipment_id} Rerouted — AI Action Taken",
+            "message": owner_message or (
+                f"Dear Owner,\n\n"
+                f"This is an automated alert from your BioRoute AI system.\n\n"
+                f"One of your shipments ({shipment_id}) encountered an emergency on the road "
+                f"and our AI agent has automatically rerouted it to protect the cargo and ensure "
+                f"on-time delivery.\n\n"
+                f"The situation has been handled. The hospital has been notified, the driver has "
+                f"new instructions, and your fleet coordinator is monitoring the situation.\n\n"
+                f"No action is required from you at this time. You will receive a delivery "
+                f"confirmation once the shipment arrives safely.\n\n"
+                f"Urgency Level: {urgency_level}\n\n"
+                f"Best regards,\nBioRoute AI Operations System"
+            ),
+        },
+    ]
 
-    # Hospital notification
-    hospital_id = f"NOTIF-{shipment_id}-HOSP-{ts_short}"
-    records.append({
-        "notification_id": hospital_id,
-        "timestamp": timestamp,
-        "shipment_id": shipment_id,
-        "recipient_type": "hospital",
-        "recipient": recipient,
-        "urgency_level": urgency_level,
-        "status": "SENT (simulated)",
-        "channels": ["email"],
-        "message": notification_message,
-    })
-
-    # Driver notification
-    driver_id = f"NOTIF-{shipment_id}-DRVR-{ts_short}"
-    records.append({
-        "notification_id": driver_id,
-        "timestamp": timestamp,
-        "shipment_id": shipment_id,
-        "recipient_type": "driver",
-        "recipient": f"Driver ({shipment_id})",
-        "urgency_level": urgency_level,
-        "status": "SENT (simulated)",
-        "channels": ["sms", "radio"],
-        "message": driver_message or notification_message[:200],
-    })
-
-    # Coordinator notification
-    coord_id = f"NOTIF-{shipment_id}-COORD-{ts_short}"
-    records.append({
-        "notification_id": coord_id,
-        "timestamp": timestamp,
-        "shipment_id": shipment_id,
-        "recipient_type": "coordinator",
-        "recipient": "Fleet Operations Coordinator",
-        "urgency_level": urgency_level,
-        "status": "SENT (simulated)",
-        "channels": ["email", "dashboard"],
-        "message": coordinator_message or notification_message[:300],
-    })
-
-    # Load existing notifications and append
     existing = {"notifications": []}
     if NOTIFICATIONS_FILE.exists():
         try:
             with open(NOTIFICATIONS_FILE, "r") as f:
                 existing = json.load(f)
         except json.JSONDecodeError:
-            pass  # start fresh if file is corrupt
+            pass
 
-    # ── Append and save ──────────────────────────────────────────────────────
-    existing["notifications"].append(notification_record)
+    existing.setdefault("notifications", []).extend(records)
     with open(NOTIFICATIONS_FILE, "w") as f:
         json.dump(existing, f, indent=2)
 
-    result = {
+    mobile_notification = (
+        f"🚨 BioRoute Alert — {shipment_id}\n"
+        f"Urgency: {urgency_level}\n"
+        f"Hospital: {recipient}\n"
+        f"Instructions: {driver_message[:60] if driver_message else 'Route change instructions sent.'}..."
+    )
+
+    ids = [r["notification_id"] for r in records]
+    return json.dumps({
         "success": True,
-        "notification_id": notification_id,
+        "notifications_sent": len(records),
+        "notification_ids": ids,
+        "notification_id": ids[0],  # backward compat
+        "shipment_id": shipment_id,
+        "mobile_notification": mobile_notification,
         "timestamp": timestamp,
         "recipient": recipient,
-        "channels_used": ["email", "sms"],
-        "message": (
-            f"NOTIFICATION SENT (simulated) to '{recipient}' | "
-            f"ID: {notification_id} | Urgency: {urgency_level}"
-        ),
-    }
-
-    return json.dumps(result, indent=2)
+        "recipients": ["hospital", "driver", "coordinator", "owner"],
+        "channels_used": ["email", "sms", "radio", "dashboard"],
+        "message": f"4 notifications sent for {shipment_id} — hospital, driver, coordinator, owner.",
+    }, indent=2)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

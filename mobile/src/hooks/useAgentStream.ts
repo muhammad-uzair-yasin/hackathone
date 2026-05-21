@@ -92,6 +92,7 @@ export function useAgentStream() {
   const completeReceivedRef = useRef(false);
   const outcomeHandledRef = useRef(false);
   const completedExecutionToolsRef = useRef<Set<string>>(new Set());
+  const completedAgentsRef = useRef<Set<string>>(new Set());
   const sseRef = useRef<SSEConnection | null>(null);
   const streamAbortedRef = useRef(false);
 
@@ -477,9 +478,10 @@ export function useAgentStream() {
         const agent = event.agent as string;
         clearTimelineKey(`working-${agent}`);
         if (event.status === 'completed') {
+          completedAgentsRef.current.add(agent);
           const result = event.result as Record<string, unknown> | undefined;
           if (result) applyAgentResult(agent, result, result.display_summary as string);
-        } else {
+        } else if (!completedAgentsRef.current.has(agent)) {
           appendTimeline({
             kind: 'error',
             agent,
@@ -554,7 +556,7 @@ export function useAgentStream() {
             if (tool === 'notify_tool') {
               void sendShipmentAlert({
                 shipmentId: String(result?.shipment_id || affectedIdRef.current || 'Unknown'),
-                message: String(result?.message || ''),
+                message: String(result?.mobile_notification || result?.message || ''),
                 outcome: 'rerouted',
               });
             }
@@ -712,6 +714,7 @@ export function useAgentStream() {
       completeReceivedRef.current = false;
       outcomeHandledRef.current = false;
       completedExecutionToolsRef.current = new Set();
+      completedAgentsRef.current = new Set();
       setPipelinePhase('running');
       setStatusLine('Starting orchestrator…');
       setOutcomeAfter(null);

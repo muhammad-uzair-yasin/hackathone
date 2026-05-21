@@ -689,10 +689,30 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
         affected_id = impact.get("affected_shipment_id")
         before_after = None
         if affected_id and isinstance(crm, dict) and crm.get("before_state"):
+            # Enrich before/after with route stops from shipments data
+            before_state = dict(crm.get("before_state") or {})
+            after_state = dict(crm.get("after_state") or {})
+            if current_shipments:
+                for ship in current_shipments.get("active_shipments", []):
+                    if ship.get("shipment_id") == affected_id:
+                        after_state["route"] = ship.get("route", [])
+                        break
+            # Load baseline for before route
+            baseline_path = _Path(__file__).parent.parent / "data" / "active_shipments_baseline.json"
+            if baseline_path.exists():
+                try:
+                    with open(baseline_path) as f:
+                        baseline = _json.load(f)
+                    for ship in baseline.get("active_shipments", []):
+                        if ship.get("shipment_id") == affected_id:
+                            before_state["route"] = ship.get("route", [])
+                            break
+                except Exception:
+                    pass
             before_after = {
                 "shipment_id": affected_id,
-                "before": crm.get("before_state"),
-                "after": crm.get("after_state"),
+                "before": before_state,
+                "after": after_state,
             }
 
         crm_updated = session_state.get("crm_updated", False)
@@ -1599,7 +1619,7 @@ async def seed_prediction_history():
                 existing = _json.load(f)
         except Exception:
             pass
-    if len(existing) >= 8:
+    if len(existing) >= 4:
         return {"seeded": False, "reason": "History already populated", "count": len(existing)}
 
     shipments = [
@@ -1610,21 +1630,13 @@ async def seed_prediction_history():
     # Risk escalation arc: calm → rising → crisis → resolving
     scenario = [
         ("LOW",      [("LOW",0.15),("LOW",0.12),("SAFE",0.06)]),
-        ("LOW",      [("LOW",0.21),("MEDIUM",0.33),("LOW",0.18)]),
-        ("MEDIUM",   [("MEDIUM",0.43),("MEDIUM",0.38),("LOW",0.22)]),
-        ("MEDIUM",   [("MEDIUM",0.49),("HIGH",0.61),("MEDIUM",0.41)]),
-        ("HIGH",     [("HIGH",0.67),("HIGH",0.72),("MEDIUM",0.46)]),
-        ("HIGH",     [("HIGH",0.75),("CRITICAL",0.88),("HIGH",0.65)]),
+        ("MEDIUM",   [("MEDIUM",0.43),("HIGH",0.61),("MEDIUM",0.41)]),
         ("CRITICAL", [("CRITICAL",0.91),("HIGH",0.79),("HIGH",0.68)]),
         ("HIGH",     [("HIGH",0.63),("MEDIUM",0.44),("LOW",0.28)]),
     ]
     summaries = [
         "Fleet operating within normal parameters. Minor sensor variance on SHP-881.",
-        "Slight temperature creep on SHP-882. Route conditions stable.",
         "SHP-881 sensor gaps detected. SHP-882 approaching risk threshold.",
-        "Dual shipment risk elevation. Thatta bypass congestion causing ETA slippage.",
-        "SHP-882 flagged HIGH — cold-chain breach risk rising. Contingency review advised.",
-        "Critical risk imminent on SHP-882. SHP-883 Lahore corridor also degraded.",
         "\U0001f6a8 CRITICAL: SHP-882 breached threshold. Emergency reroute triggered.",
         "Situation stabilising post-reroute. Fleet risk returning to HIGH.",
     ]

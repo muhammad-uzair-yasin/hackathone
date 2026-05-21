@@ -25,19 +25,22 @@ export default function ShipmentDetailScreen({ shipment, onClose }: Props) {
   const [activeStops, setActiveStops] = React.useState(shipment.route);
   const [activeRouteId, setActiveRouteId] = React.useState<string>('active');
 
-  const updateMap = (stops: any[]) => {
+  const isRerouted = /reroute/i.test(shipment.current_status);
+  const isAiRouted = isRerouted && activeRouteId === 'active';
+
+  const updateMap = (stops: any[], isAiRoutedRoute: boolean) => {
     if (webViewRef.current) {
       webViewRef.current.postMessage(JSON.stringify({
         type: 'ROUTE_DATA',
-        before: [],
-        after: stops,
+        before: isAiRoutedRoute ? [] : stops,
+        after: isAiRoutedRoute ? stops : [],
       }));
     }
   };
 
   React.useEffect(() => {
-    updateMap(activeStops);
-  }, [activeStops]);
+    updateMap(activeStops, isAiRouted);
+  }, [activeStops, isAiRouted]);
 
   return (
     <SafeAreaView style={pageStyles.screen}>
@@ -68,14 +71,14 @@ export default function ShipmentDetailScreen({ shipment, onClose }: Props) {
             javaScriptEnabled
             onLoad={() => {
               setTimeout(() => {
-                updateMap(activeStops);
+                updateMap(activeStops, isAiRouted);
               }, 400);
             }}
             onMessage={(e) => {
               try {
                 const msg = JSON.parse(e.nativeEvent.data);
                 if (msg.type === 'MAP_READY') {
-                  updateMap(activeStops);
+                  updateMap(activeStops, isAiRouted);
                 }
               } catch {}
             }}

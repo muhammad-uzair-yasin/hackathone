@@ -37,10 +37,11 @@ export interface ShipmentState {
 }
 
 interface NotifBubble {
-  type: 'driver' | 'hospital' | 'coordinator';
+  type: 'driver' | 'hospital' | 'coordinator' | 'owner';
   label: string;
   icon: string;
   message: string;
+  subject?: string;
   channel: string;
   color: string;
   bgColor: string;
@@ -116,6 +117,7 @@ export default function OutcomeVisualization({
             label: `🚚 Driver (${n.shipment_id})`,
             icon: 'car-outline',
             message: n.message ?? '',
+            subject: n.subject,
             channel: 'SMS + Radio',
             color: '#7C3AED',
             bgColor: '#F5F3FF',
@@ -127,6 +129,7 @@ export default function OutcomeVisualization({
             label: `🏥 ${n.recipient ?? 'Hospital'}`,
             icon: 'medical-outline',
             message: n.message ?? '',
+            subject: n.subject,
             channel: 'Email',
             color: '#059669',
             bgColor: '#ECFDF5',
@@ -138,10 +141,23 @@ export default function OutcomeVisualization({
             label: `📡 Fleet Coordinator`,
             icon: 'radio-outline',
             message: n.message ?? '',
+            subject: n.subject,
             channel: 'Email + Dashboard',
             color: '#D97706',
             bgColor: '#FFFBEB',
             alignRight: false,
+          });
+        } else if (type === 'owner') {
+          notifs.push({
+            type: 'owner',
+            label: `👔 Company Owner`,
+            icon: 'briefcase-outline',
+            message: n.message ?? '',
+            subject: n.subject,
+            channel: 'Email',
+            color: '#DC2626',
+            bgColor: '#FEF2F2',
+            alignRight: true,
           });
         }
       }
@@ -415,7 +431,7 @@ export default function OutcomeVisualization({
             <Text style={styles.notifTitle}>Notifications Sent</Text>
             {loadingNotifs && <ActivityIndicator size="small" color={Page.primary} />}
           </View>
-          <Text style={styles.notifSub}>3 recipients notified simultaneously</Text>
+          <Text style={styles.notifSub}>4 recipients notified simultaneously</Text>
 
           {notifications.length === 0 && !loadingNotifs ? (
             <View style={styles.noNotif}>
@@ -440,6 +456,11 @@ export default function OutcomeVisualization({
                     { backgroundColor: n.bgColor, borderColor: `${n.color}30` },
                     n.alignRight && styles.bubbleBodyRight,
                   ]}>
+                    {n.subject ? (
+                      <Text style={[styles.bubbleSubject, { color: n.color }]}>
+                        {n.subject}
+                      </Text>
+                    ) : null}
                     <Text style={[styles.bubbleText, { color: '#1F2937' }]}>
                       {n.message.slice(0, 280)}{n.message.length > 280 ? '…' : ''}
                     </Text>
@@ -605,6 +626,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bubbleBodyRight: { borderBottomLeftRadius: 14, borderBottomRightRadius: 4 },
+  bubbleSubject: { fontFamily: FontFamily.semiBold, fontSize: 11, marginBottom: 4 },
   bubbleText: { fontFamily: FontFamily.regular, fontSize: 12, lineHeight: 18 },
   bubbleFooter: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 4 },
   bubbleChannel: { fontFamily: FontFamily.medium, fontSize: 10 },
