@@ -154,8 +154,14 @@ def reset_demo_session() -> dict:
         from langchain_agent.prediction_agent import PREDICTIONS_FILE, DATA_DIR
         PREDICTIONS_FILE.write_text(json.dumps({"predictions": [], "run_count": 0}, indent=2), encoding="utf-8")
         history_file = DATA_DIR / "prediction_history.json"
+        # Keep only the first 4 seed entries, remove AI-generated ones (run_id > 4)
         if history_file.exists():
-            history_file.write_text("[]", encoding="utf-8")
+            try:
+                existing_history = json.loads(history_file.read_text())
+                seed_entries = [e for e in existing_history if e.get("run_id", 99) <= 4]
+                history_file.write_text(json.dumps(seed_entries, indent=2), encoding="utf-8")
+            except Exception:
+                history_file.write_text("[]", encoding="utf-8")
         predictions_ok = True
     except Exception:
         pass
