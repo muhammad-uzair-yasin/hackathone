@@ -113,6 +113,8 @@ Mobile App (React Native / Expo) — Live SSE Stream
 | **Pollinations TTS** | Text-to-speech for agent responses |
 | **OpenStreetMap / CARTO** | Leaflet map tiles for route visualization |
 | **expo-notifications** | Local push notifications for critical alerts |
+| **WhatsApp Cloud API** | Real WhatsApp notifications via Meta Business API (templates) |
+| **SMTP Email** | Email notifications via background worker queue |
 
 ---
 
@@ -141,6 +143,7 @@ Mobile App (React Native / Expo) — Live SSE Stream
 | LLM | Claude Haiku 4.5 (via Pollinations.ai OpenAI-compatible API) |
 | Backend | FastAPI + uvicorn (Python 3.13) |
 | Streaming | Server-Sent Events (SSE) |
+| Notifications | WhatsApp Cloud API (Meta) + SMTP Email (background workers) |
 | Mobile | React Native + Expo SDK 55 |
 | Maps | Leaflet (via WebView) |
 | Push Notifications | `expo-notifications` |
@@ -160,6 +163,12 @@ hackathone/
 │   ├── tools.py               # update_crm_tool, notify_tool, write_summary_tool
 │   ├── schemas.py             # Pydantic output schemas for all subagents
 │   ├── prediction_schemas.py  # Pydantic schemas for prediction pipeline
+│   ├── whatsapp_service.py    # WhatsApp Cloud API integration
+│   ├── whatsapp_worker.py     # Background worker for WhatsApp message queue
+│   ├── whatsapp_config.py     # WhatsApp credentials + template config
+│   ├── email_service.py       # Email notification service
+│   ├── email_worker.py        # Background worker for email queue
+│   ├── email_config.py        # Email SMTP configuration
 │   ├── llm.py                 # LLM provider (Pollinations claude-fast)
 │   └── data/
 │       ├── active_shipments.json        # Live shipment CRM (updated by agent)
@@ -167,12 +176,20 @@ hackathone/
 │       ├── notifications.json           # 4-audience notification log
 │       ├── predictions.json             # Latest risk predictions
 │       ├── prediction_history.json      # Rolling 20-run history
+│       ├── history.json                 # Agent conversation history
+│       ├── driver_reports.json          # Driver field reports log
+│       ├── pattern_analysis_output.json # Breach pattern analysis results
+│       ├── breach_patterns.json         # Historical breach pattern data
+│       ├── risk_context.json            # Risk scoring context
+│       ├── news_scenarios.json          # Demo news alert scenarios
 │       └── summary.md                   # Plain-English run summary
 ├── mobile/                    # React Native / Expo app
 │   ├── src/screens/           # 6 app screens
 │   ├── src/hooks/useAgentStream.ts  # SSE consumer + state management
 │   └── src/services/NotificationService.ts  # Push notifications
 ├── webapp/                    # Static HTML dashboard
+├── docs/context/              # Agent context + development progress docs
+├── specs/small-tasks/         # Task specs for background workers + messaging
 └── README.md
 ```
 
