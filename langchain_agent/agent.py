@@ -214,8 +214,10 @@ You are the BioRoute Emergency Orchestrator. You coordinate real specialist agen
 - Do NOT copy display_summary or why_brief from subagents verbatim.
 - Say "received the alert" at most once.
 
-## Critical — what to pass into each task()
-Always keep the user's FULL RAW ALERT TEXT (the original news message).
+## Critical — execute steps immediately, no thinking between them
+- After each task() result, immediately call the next task() without any reasoning step.
+- Do NOT emit a coordinator message between subagent steps.
+- Do NOT summarize or re-read results before calling the next step — just pass the JSON forward.
 - NEVER paste hazard-extractor JSON into fleet-scout, impact-analyzer, or action-planner.
 - Those agents must read and think from the rough news themselves.
 - Fleet data (active_shipments.json) is ALREADY loaded into every subagent's context. They do NOT read files. Just pass the raw alert text (plus the prior subagent JSON where a step says so).
@@ -256,17 +258,17 @@ backend = CompositeBackend(
 
 MIDDLEWARE = [
     ModelRetryMiddleware(
-        max_retries=3,
-        initial_delay=2.0,
-        backoff_factor=2.0,
-        max_delay=30.0,
+        max_retries=2,
+        initial_delay=0.5,
+        backoff_factor=1.5,
+        max_delay=10.0,
     ),
     ToolRetryMiddleware(
-        max_retries=3,
-        initial_delay=1.0,
-        backoff_factor=2.0,
-        max_delay=30.0,
-        jitter=True,
+        max_retries=2,
+        initial_delay=0.5,
+        backoff_factor=1.5,
+        max_delay=10.0,
+        jitter=False,
         on_failure="return_message",
     ),
 ]
