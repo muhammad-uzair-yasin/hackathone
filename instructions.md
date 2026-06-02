@@ -34,7 +34,7 @@ Create a `.env` file in the project root:
 
 ```bash
 # hackathone/.env
-ANTHROPIC_API_KEY=sk-ant-...your-key-here...
+Pollinations=sk-ant-...your-key-here...
 ```
 
 > **Note:** The mobile app has its own `.env` in `mobile/` — see Step 5.

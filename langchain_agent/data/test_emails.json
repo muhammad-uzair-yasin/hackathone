@@ -1,0 +1,14 @@
+{
+  "test_emails": [
+    {
+      "id": "TEST-EMAIL-033726",
+      "timestamp": "2026-06-02T03:37:26.976572+00:00",
+      "recipient": "uzairyasin395@gmail.com",
+      "subject": "BioRoute Test",
+      "message": "Hello from BioRoute!",
+      "email_status": "FAILED",
+      "email_sent_at": null,
+      "email_error": "SMTP send failed (see logs for details)"
+    }
+  ]
+}

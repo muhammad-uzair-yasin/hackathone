@@ -1,0 +1,37 @@
+{
+  "history": [
+    {
+      "timestamp": "2026-06-02T02:47:51.337505+00:00",
+      "event": "update_crm",
+      "success": true,
+      "update_timestamp": "2026-06-02T02:47:51.337496+00:00",
+      "message": "SUCCESS: Shipment SHP-882 updated. Status: 'In Transit (On Time)' \u2192 'Emergency Reroute'. Route: 'N-5 Karachi \u2192 Jamshoro' \u2192 'M-9 Thatta Bypass'.",
+      "before_status": "In Transit (On Time)",
+      "before_route": "N-5 Karachi \u2192 Jamshoro",
+      "after_status": "Emergency Reroute",
+      "after_route": "M-9 Thatta Bypass"
+    },
+    {
+      "timestamp": "2026-06-02T02:56:44.053852+00:00",
+      "event": "update_crm",
+      "success": true,
+      "update_timestamp": "2026-06-02T02:56:44.053813+00:00",
+      "message": "SUCCESS: Shipment SHP-915 updated. Status: 'In Transit (On Time)' \u2192 'Emergency Reroute'. Route: 'Murree Rd Islamabad \u2192 Rawalpindi' \u2192 'Srinagar Highway'.",
+      "before_status": "In Transit (On Time)",
+      "before_route": "Murree Rd Islamabad \u2192 Rawalpindi",
+      "after_status": "Emergency Reroute",
+      "after_route": "Srinagar Highway"
+    },
+    {
+      "timestamp": "2026-06-02T04:30:11.212619+00:00",
+      "event": "update_crm",
+      "success": true,
+      "update_timestamp": "2026-06-02T04:30:11.212596+00:00",
+      "message": "SUCCESS: Shipment SHP-882 updated. Status: 'In Transit (On Time)' \u2192 'Emergency Reroute'. Route: 'N-5 Karachi \u2192 Jamshoro' \u2192 'M-9 Thatta Bypass'.",
+      "before_status": "In Transit (On Time)",
+      "before_route": "N-5 Karachi \u2192 Jamshoro",
+      "after_status": "Emergency Reroute",
+      "after_route": "M-9 Thatta Bypass"
+    }
+  ]
+}

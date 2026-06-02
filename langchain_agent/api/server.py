@@ -17,6 +17,13 @@ SSE Event types:
 
 from __future__ import annotations
 
+# Load .env FIRST, before any other imports
+from pathlib import Path as _Path
+from dotenv import load_dotenv as _load_dotenv
+_env_file = _Path(__file__).parent.parent.parent / ".env"
+if _env_file.exists():
+    _load_dotenv(_env_file)
+
 import asyncio
 import json
 import logging
@@ -24,12 +31,11 @@ import traceback
 from datetime import datetime, timezone
 from typing import AsyncGenerator
 
-from pathlib import Path as _Path
-
-from fastapi import FastAPI, Query, File, UploadFile
+from fastapi import FastAPI, Query, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from langchain_agent.agent import get_agent
 from langchain_agent.tools import (
@@ -43,8 +49,9 @@ from langchain_agent.tools import (
     reset_demo_session,
 )
 
-_WEBAPP_DIR = _Path(__file__).parent.parent.parent / "webapp"
+DATA_DIR = _Path(__file__).parent.parent / "data"
 
+_WEBAPP_DIR = _Path(__file__).parent.parent.parent / "webapp"
 # ─── App Setup ────────────────────────────────────────────────────────────────
 
 app = FastAPI(
@@ -60,6 +67,165 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+
+
+# ─── Request/Response Models ──────────────────────────────────────────────────
+
+
+class TestEmailRequest(BaseModel):
+    """Request model for test email sending."""
+    subject: str = "BioRoute Test Email"
+    message: str = "Test message from BioRoute"
+
+
+class TestWhatsAppRequest(BaseModel):
+    """Request model for test WhatsApp sending."""
+    message: str = "Test alert from BioRoute"
+
+
+# ─── Test Messaging Endpoints ────────────────────────────────────────────────
+
+
+@app.post("/api/test/send-email")
+async def test_send_email(req: TestEmailRequest, background_tasks: BackgroundTasks):
+    """
+    Test email sending endpoint.
+    
+    Calls email_service.send_email() in background using FastAPI's built-in BackgroundTasks.
+    Returns immediately with queued status.
+    
+    Recipient (hardcoded): uzairyasin395@gmail.com
+    """
+    from langchain_agent.email_service import send_email
+    
+    recipient_email = "uzairyasin395@gmail.com"
+    subject = req.subject or "BioRoute Test Email"
+    message = req.message or "Test message from BioRoute"
+    
+    # Queue email send to background task
+    background_tasks.add_task(send_email, recipient_email, subject, message)
+    
+    logger.info(
+        "[TestAPI] Queued email send: to=%s subject=%s (will deliver in background)",
+        recipient_email,
+        subject,
+    )
+    
+    return {
+        "success": True,
+        "queued": True,
+        "message": f"Email queued for delivery to {recipient_email}",
+        "recipient": recipient_email,
+        "subject": subject,
+        "delivery": "background (FastAPI BackgroundTasks)",
+        "note": "Email will be sent asynchronously; check logs for delivery status",
+    }
+
+
+@app.post("/api/test/send-whatsapp")
+async def test_send_whatsapp(req: TestWhatsAppRequest, background_tasks: BackgroundTasks):
+    """
+    Test WhatsApp sending endpoint.
+    
+    Calls whatsapp_service.send_whatsapp_template() in background using FastAPI's built-in BackgroundTasks.
+    Returns immediately with queued status.
+    
+    Recipient (hardcoded): 923236891550 (no + prefix)
+    Template: shipment_alert
+    """
+    from langchain_agent.whatsapp_service import send_whatsapp_template
+    
+    recipient_phone = "923236891550"
+    message = req.message or "Test alert from BioRoute"
+    
+    # Queue WhatsApp send to background task
+    background_tasks.add_task(send_whatsapp_template, recipient_phone, message)
+    
+    logger.info(
+        "[TestAPI] Queued WhatsApp send: to=%s (will deliver in background)",
+        recipient_phone,
+    )
+    
+    return {
+        "success": True,
+        "queued": True,
+        "message": f"WhatsApp message queued for delivery to {recipient_phone}",
+        "recipient": recipient_phone,
+        "text": message,
+        "delivery": "background (FastAPI BackgroundTasks)",
+        "note": "WhatsApp message will be sent asynchronously; check logs for delivery status",
+    }
+
+
+# ─── Notification Sending Endpoint ────────────────────────────────────────────
+
+
+class SendNotificationRequest(BaseModel):
+    """Request to send email and/or WhatsApp."""
+    recipient_email: str = "uzairyasin395@gmail.com"
+    recipient_phone: str = "923236891550"
+    subject: str = "BioRoute Alert"
+    message: str = "Alert message"
+    send_email: bool = True
+    send_whatsapp: bool = True
+
+
+@app.post("/api/send-notification")
+async def send_notification(req: SendNotificationRequest, background_tasks: BackgroundTasks):
+    """
+    Send email and/or WhatsApp message via background tasks.
+    
+    Called by UI or agent to deliver notifications asynchronously.
+    
+    Args:
+        req.recipient_email: Email address
+        req.recipient_phone: Phone number (no + prefix)
+        req.subject: Email subject
+        req.message: Message text for both email and WhatsApp
+        req.send_email: Whether to send email
+        req.send_whatsapp: Whether to send WhatsApp
+    
+    Returns:
+        Success status with queued counts.
+    """
+    from langchain_agent.email_service import send_email
+    from langchain_agent.whatsapp_service import send_whatsapp_template
+    
+    queued_count = 0
+    
+    if req.send_email:
+        background_tasks.add_task(
+            send_email,
+            req.recipient_email,
+            req.subject,
+            req.message,
+        )
+        queued_count += 1
+        logger.info("[NotificationAPI] Queued email to %s", req.recipient_email)
+    
+    if req.send_whatsapp:
+        background_tasks.add_task(
+            send_whatsapp_template,
+            req.recipient_phone,
+            req.message,
+        )
+        queued_count += 1
+        logger.info("[NotificationAPI] Queued WhatsApp to %s", req.recipient_phone)
+    
+    return {
+        "success": True,
+        "queued_count": queued_count,
+        "channels": [
+            "email" if req.send_email else None,
+            "whatsapp" if req.send_whatsapp else None,
+        ],
+        "recipient_email": req.recipient_email if req.send_email else None,
+        "recipient_phone": req.recipient_phone if req.send_whatsapp else None,
+        "message": f"Queued {queued_count} notification(s) for delivery",
+    }
+
 
 # Serve the web UI at /
 if _WEBAPP_DIR.exists():
@@ -164,7 +330,7 @@ _COORD_BLOCK_PHRASES = (
     "recommended action: monitor",
 )
 
-_COORD_MAX = 5
+_COORD_MAX = 2
 
 
 def _should_emit_coordinator(text: str, seen: set[str], count: list[int]) -> bool:
@@ -732,24 +898,40 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
         pipeline = session_record.get("pipeline", {}) if session_record else {}
         impact = (pipeline.get("step_3_impact_analysis") or pipeline.get("step_2_impact_analysis") or {})
         crm = (pipeline.get("step_5_crm_update") or pipeline.get("step_4_crm_update") or {})
-        affected_id = impact.get("affected_shipment_id")
-        before_after = None
 
-        # Always try to build before_after with route stops if we have an affected shipment
+        # Run the safety-net flush FIRST so executed tools (CRM/notify/summary)
+        # are reflected in session_state before we build the COMPLETE payload.
+        for pending_evt in _flush_pending_tool_results(session_state):
+            yield pending_evt
+
+        # Identify the affected shipment: prefer the impact step, else fall back to
+        # whichever shipment in the (rerouted) DB now shows an emergency status.
+        affected_id = impact.get("affected_shipment_id")
+        if not affected_id and current_shipments:
+            for ship in current_shipments.get("active_shipments", []):
+                status = str(ship.get("current_status", "")).lower()
+                if "reroute" in status or "emergency" in status:
+                    affected_id = ship.get("shipment_id")
+                    break
+
+        before_after = None
         if affected_id:
             before_state = dict(crm.get("before_state") or {})
             after_state = dict(crm.get("after_state") or {})
 
-            # Load after route from current (rerouted) shipments
+            # After route from current (rerouted) shipments
             if current_shipments:
                 for ship in current_shipments.get("active_shipments", []):
                     if ship.get("shipment_id") == affected_id:
                         after_state["route"] = ship.get("route", [])
+                        after_state.setdefault("shipment_id", affected_id)
                         if not after_state.get("route_name"):
                             after_state["route_name"] = ship.get("route_name", "")
+                        if not after_state.get("current_status"):
+                            after_state["current_status"] = ship.get("current_status", "")
                         break
 
-            # Load before route from baseline
+            # Before route from baseline
             baseline_path = _Path(__file__).parent.parent / "data" / "active_shipments_baseline.json"
             if baseline_path.exists():
                 try:
@@ -758,6 +940,7 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
                     for ship in baseline.get("active_shipments", []):
                         if ship.get("shipment_id") == affected_id:
                             before_state["route"] = ship.get("route", [])
+                            before_state.setdefault("shipment_id", affected_id)
                             if not before_state.get("route_name"):
                                 before_state["route_name"] = ship.get("route_name", "")
                             break
@@ -771,6 +954,7 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
                     "after": after_state,
                 }
 
+        # crm_updated read AFTER the flush so it reflects tools that actually ran.
         crm_updated = session_state.get("crm_updated", False)
         outcome = session_state.get("outcome", "completed")
         if not crm_updated and isinstance(crm, dict) and (
@@ -778,12 +962,12 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
         ):
             crm_updated = True
             outcome = "reroute_complete"
-            if affected_id and crm.get("before_state") and not before_after:
-                before_after = {
-                    "shipment_id": affected_id,
-                    "before": crm.get("before_state"),
-                    "after": crm.get("after_state"),
-                }
+
+        # A real route change (before_after with route stops) is itself a reroute.
+        if before_after and outcome != "all_clear":
+            crm_updated = True
+            if outcome == "completed":
+                outcome = "reroute_complete"
 
         if crm_updated:
             complete_msg = "Emergency reroute complete — route updated and hospital notified."
@@ -793,9 +977,6 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
         else:
             complete_msg = "Analysis complete."
 
-        for pending_evt in _flush_pending_tool_results(session_state):
-            yield pending_evt
-
         yield sse_event("COMPLETE", {
             "message": complete_msg,
             "outcome": outcome,
@@ -804,7 +985,7 @@ async def _run_agent_stream(input_text: str) -> AsyncGenerator[str, None]:
             "summary_preview": summary_preview,
             "session_record": session_record,
             "current_shipments": current_shipments,
-            "before_after": before_after if crm_updated else None,
+            "before_after": before_after,
         })
 
     except Exception as exc:

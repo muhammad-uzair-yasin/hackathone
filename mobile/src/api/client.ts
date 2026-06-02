@@ -72,6 +72,39 @@ export async function fetchSummaryDocument(): Promise<SummaryDocument | null> {
   };
 }
 
+export interface SendNotificationPayload {
+  recipient_email: string;
+  recipient_phone: string;
+  subject: string;
+  message: string;
+  send_email: boolean;
+  send_whatsapp: boolean;
+}
+
+export interface SendNotificationResult {
+  success: boolean;
+  queued_count?: number;
+  channels?: (string | null)[];
+  message?: string;
+}
+
+/** Send the run's notification to a real email and/or WhatsApp number. */
+export async function sendNotification(
+  payload: SendNotificationPayload
+): Promise<SendNotificationResult> {
+  try {
+    const res = await fetch(`${API_BASE}/api/send-notification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return { success: false, message: `Send failed (${res.status})` };
+    return (await res.json()) as SendNotificationResult;
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Failed to contact backend server' };
+  }
+}
+
 export async function extractTextFromUrl(url: string): Promise<{ success: boolean; text?: string; error?: string }> {
   try {
     const res = await fetch(`${API_BASE}/api/extract/url`, {

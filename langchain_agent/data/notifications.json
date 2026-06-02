@@ -1,17 +1,98 @@
 {
   "notifications": [
     {
-      "notification_id": "NOTIF-SHP-882-203109",
-      "timestamp": "2026-05-18T15:31:09.247114+00:00",
+      "notification_id": "NOTIF-SHP-882-HOSP-093024",
+      "timestamp": "2026-06-02T04:30:24.081532+00:00",
       "shipment_id": "SHP-882",
-      "recipient": "Liaquat University Hospital Administration",
+      "recipient_type": "hospital",
+      "recipient": "Liaquat Hospital, Jamshoro \u2014 Pharmacy Admin",
+      "recipient_email": "uzairyasin395@gmail.com",
+      "recipient_phone": "923236891550",
       "urgency_level": "IMMEDIATE",
       "status": "SENT (simulated)",
+      "email_status": "pending",
+      "email_sent_at": null,
+      "email_error": null,
+      "whatsapp_status": "pending",
+      "whatsapp_sent_at": null,
+      "whatsapp_error": null,
       "channels": [
         "email",
-        "sms"
+        "whatsapp"
       ],
-      "message": "URGENT: SHP-882 Insulin Shipment Reroute Notification\n\nShipment ID: SHP-882\nCargo: Insulin (Temperature-Critical) | Value: $50,000\nOriginal Route: N-5 Karachi \u2192 Jamshoro\n\nREASON FOR REROUTE:\nSindh Emergency Advisory (2:15 PM): Multi-vehicle collision on N-5 National Highway near Hyderabad West Bypass has blocked ALL lanes toward Jamshoro. Estimated clearance: 2\u20133 hours. Concurrent extreme heat emergency: temperature 42\u00b0C, forecast 44\u00b0C by 3:00 PM.\n\nCRITICAL CARGO RISK:\nInsulin max-safe threshold: 38\u00b0C. Current ambient exceeds threshold by 4\u00b0C. Spoilage risk: total loss within 20 minutes if unrefrigerated.\n\nNEW PLAN (IMMEDIATE EXECUTION):\n\u2022 New Route: M-9 Thatta Bypass (avoids N-5 entirely)\n\u2022 Interim Stop: Hyderabad Cold-Vault for temperature re-stabilization and handoff (~26 min into transit)\n\u2022 Final Destination: Liaquat Hospital, Jamshoro (52 min total ETA from current location)\n\u2022 Expected Arrival: ~3:30 PM (within safe delivery window)\n\nCOLD-CHAIN INTEGRITY:\nCargo will be transferred to temperature-controlled vault facility at Hyderabad, ensuring insulin remains within safe parameters. Professional refrigeration infrastructure will restore full cold-chain compliance before final hospital leg.\n\nNEXT STEPS:\n1. Driver has been notified and will proceed immediately via M-9 Thatta Bypass.\n2. Hyderabad Cold-Vault facility has been alerted and is preparing bay for handoff.\n3. Real-time GPS tracking remains active; you will receive arrival confirmation.\n\nESTIMATED DELIVERY: 3:30 PM (52 minutes from reroute execution)\n\nFor urgent questions, contact BioRoute Operations: +92 XXX-XXXXXXX\n\nThis action taken under emergency cold-chain rescue protocols. Cargo integrity and patient safety prioritized."
+      "subject": "[URGENT] Shipment SHP-882 \u2014 Route Change & Updated Delivery Time",
+      "message": "SUBJECT: URGENT \u2014 SHP-882 Insulin Shipment Rerouted Due to N-5 Closure\n\nDear Pharmacy Admin,\n\nWe are writing to inform you that your critical insulin shipment (SHP-882, $50,000 value) has been rerouted due to an emergency on the N-5 National Highway.\n\nWhat Happened:\nThe N-5 National Highway near Hyderabad West Bypass (KM 12.4) is closed due to a water main burst. The closure is in effect from 14:30\u201318:00 PKT (16 May 2026). Simultaneously, an extreme heat advisory (43\u00b0C peak, 48\u00b0C heat index) has been issued for the region, creating critical thermal risk for temperature-sensitive cargo.\n\nNew Route & ETA:\nYour shipment is now routing via M-9 Thatta Bypass with a mandatory cold-vault thermal reset at Hyderabad Cold-Vault. This ensures the insulin maintains safe temperature during the peak heat window and avoids the N-5 closure entirely.\n\nOriginal ETA: 14:30 PKT (40 minutes from alert time)\nNew ETA: 14:55\u201315:10 PKT (52 minutes from alert time)\nCold-Vault Stop: 10 minutes (thermal transfer only)\n\nFinal Destination: Liaquat Hospital, Jamshoro (unchanged)\n\nAction Required:\nPlease confirm receipt of this alert and ensure pharmacy staff are on standby to receive the shipment at the updated time. The cold-vault handoff will reset the thermal clock, so the insulin will arrive in optimal condition.\n\nFor any questions or concerns, contact the Sindh Emergency Management Line: +92-21-4455667.\n\nThank you for your prompt attention to this critical matter.\n\nBioRoute Emergency Orchestrator\n16 May 2026 | 14:30 PKT"
+    },
+    {
+      "notification_id": "NOTIF-SHP-882-DRVR-093024",
+      "timestamp": "2026-06-02T04:30:24.081532+00:00",
+      "shipment_id": "SHP-882",
+      "recipient_type": "driver",
+      "recipient": "Driver \u2014 Truck SHP-882",
+      "recipient_email": "uzairyasin395@gmail.com",
+      "recipient_phone": "923236891550",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "email_status": "pending",
+      "email_sent_at": null,
+      "email_error": null,
+      "whatsapp_status": "pending",
+      "whatsapp_sent_at": null,
+      "whatsapp_error": null,
+      "channels": [
+        "sms",
+        "radio",
+        "whatsapp"
+      ],
+      "subject": "ACTION REQUIRED: New Route for SHP-882",
+      "message": "SHP-882 REROUTE IMMEDIATE: Proceed M-9 Thatta Bypass from Karachi Depot. Skip N-5 entirely\u2014closed at Hyderabad West KM 12.4 until 18:00. Stop Hyderabad Cold-Vault for 10-min thermal reset. Resume to Liaquat Hospital Jamshoro. New ETA 52 min. Questions call +92-21-4455667."
+    },
+    {
+      "notification_id": "NOTIF-SHP-882-COORD-093024",
+      "timestamp": "2026-06-02T04:30:24.081532+00:00",
+      "shipment_id": "SHP-882",
+      "recipient_type": "coordinator",
+      "recipient": "Fleet Operations Coordinator",
+      "recipient_email": "uzairyasin395@gmail.com",
+      "recipient_phone": "923236891550",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "email_status": "pending",
+      "email_sent_at": null,
+      "email_error": null,
+      "whatsapp_status": "pending",
+      "whatsapp_sent_at": null,
+      "whatsapp_error": null,
+      "channels": [
+        "email",
+        "dashboard",
+        "whatsapp"
+      ],
+      "subject": "[Fleet Alert] Emergency Reroute Executed \u2014 SHP-882",
+      "message": "EMERGENCY ACTION: SHP-882 (Insulin, CRITICAL, $50K) rerouted M-9 Thatta Bypass. Reason: N-5 closure KM 12.4 Hyderabad West (water main, 14:30\u201318:00 PKT) + extreme heat (43\u00b0C). Route change: N-5 direct \u2192 M-9 Thatta Bypass + Hyderabad Cold-Vault thermal handoff. Original ETA 40 min \u2192 New ETA 52 min (+12 min). Cost: +$180 (cold-vault fee + fuel delta). Driver SMS/radio notified. Hospital alerted. Monitor thermal telemetry during handoff for spoilage risk mitigation. Shipment status updated to Emergency Reroute in CRM."
+    },
+    {
+      "notification_id": "NOTIF-SHP-882-OWNR-093024",
+      "timestamp": "2026-06-02T04:30:24.081532+00:00",
+      "shipment_id": "SHP-882",
+      "recipient_type": "owner",
+      "recipient": "Company Owner / CEO",
+      "recipient_email": "uzairyasin395@gmail.com",
+      "recipient_phone": "923236891550",
+      "urgency_level": "IMMEDIATE",
+      "status": "SENT (simulated)",
+      "email_status": "pending",
+      "email_sent_at": null,
+      "email_error": null,
+      "whatsapp_status": "pending",
+      "whatsapp_sent_at": null,
+      "whatsapp_error": null,
+      "channels": [
+        "email",
+        "whatsapp"
+      ],
+      "subject": "[Executive Alert] Shipment SHP-882 Rerouted \u2014 AI Action Taken",
+      "message": "CRITICAL ALERT: N-5 highway closure + extreme heat in Sindh forced emergency reroute of high-value insulin shipment (SHP-882, $50K). We detected the risk 40 minutes before driver impact and rerouted via M-9 Thatta Bypass with a thermal reset stop. New ETA 52 min vs original 40 min\u201412 minute delay acceptable to save cargo and ensure patient safety. Hospital, driver, and fleet coordinator notified. Action taken: CRM updated, route locked, thermal safeguard activated. Outcome: $50K cargo protected, patient care uninterrupted."
     }
   ]
 }

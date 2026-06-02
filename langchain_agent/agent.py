@@ -4,6 +4,7 @@ agent.py — Main Deep Agent definition using LangChain Deep Agents SDK.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from deepagents import create_deep_agent
@@ -21,6 +22,7 @@ from langchain_agent.tools import notify_tool, update_crm_tool, write_summary_to
 from .llm import claude_fast
 
 DATA_DIR = Path(__file__).parent / "data"
+SHIPMENTS_FILE = DATA_DIR / "active_shipments.json"
 
 # ─── Subagent System Prompts ─────────────────────────────────────────────────
 
@@ -47,7 +49,7 @@ FLEET_SCOUT_PROMPT = """\
 You are the Shipment Analyzer for BioRoute Cold-Chain Logistics.
 
 ## Your job
-Read /data/active_shipments.json. List every active shipment on the road.
+List every active shipment on the road, using the LIVE FLEET DATA already in your context.
 
 ## INPUT
 - Raw news/alert text in the task message (read for context only — do NOT extract hazard fields)
@@ -59,7 +61,7 @@ Read /data/active_shipments.json. List every active shipment on the road.
 - why_brief: ≤15 words — e.g. "Must know who is moving before matching routes"
 
 ## Rules
-- Read the CRM file once. Copy route_name and destinations exactly.
+- All fleet data is already in your context (LIVE FLEET DATA below). Do NOT read or open any file. Copy route_name and destinations exactly.
 - Do NOT decide who is affected — that is the next agent.
 - Output ONLY valid JSON.
 """
@@ -73,7 +75,7 @@ Read the rough news alert yourself. Decide which shipment(s) are affected and wh
 ## INPUT (in task message)
 - RAW ALERT: full unstructured news text — YOU infer routes, temperature, delays from this
 - Optional FLEET LIST: summary from fleet-scout (shipment IDs and routes)
-- Read /data/active_shipments.json for cargo thresholds and alternative_routes (4 per shipment)
+- Use the LIVE FLEET DATA in your context for cargo thresholds and alternative_routes (4 per shipment) — do NOT read files
 
 ## Do NOT use
 - Any pre-parsed "hazard JSON" or hazard-extractor output — think from the news directly
@@ -106,7 +108,7 @@ Read the rough news alert yourself. Pick the BEST of four alternative_routes for
 ## INPUT (in task message)
 - RAW ALERT: full unstructured news text — YOU infer what is blocked and urgency
 - IMPACT: ImpactAnalysis JSON from route impact agent (shipment id, alternatives, risk)
-- Read /data/active_shipments.json if you need exact alternative route names
+- Use the LIVE FLEET DATA in your context for exact alternative route names — do NOT read files
 
 ## Do NOT use
 - Pre-parsed hazard JSON from hazard-detector — reason from the news + impact only
@@ -132,60 +134,83 @@ Read the rough news alert yourself. Pick the BEST of four alternative_routes for
 - Output ONLY valid JSON.
 """
 
-SUBAGENTS = [
-    {
-        "name": "hazard-detector",
-        "description": (
-            "Step 1 — Reads raw news/alert text only. "
-            "Returns HazardExtraction (what happened + why_brief)."
-        ),
-        "model": claude_fast,
-        "system_prompt": EXTRACTOR_PROMPT,
-        "tools": [],
-        "response_format": HazardExtraction,
-    },
-    {
-        "name": "shipment-analyzer",
-        "description": (
-            "Step 2 — Reads active_shipments.json. "
-            "Returns FleetScoutOutput (who is on the road)."
-        ),
-        "model": claude_fast,
-        "system_prompt": FLEET_SCOUT_PROMPT,
-        "tools": [],
-        "response_format": FleetScoutOutput,
-    },
-    {
-        "name": "impact-analyzer",
-        "description": (
-            "Step 3 — Reads raw news + CRM; decides who is hit. "
-            "Returns ImpactAnalysis (who is hit + why_brief)."
-        ),
-        "model": claude_fast,
-        "system_prompt": ANALYZER_PROMPT,
-        "tools": [],
-        "response_format": ImpactAnalysis,
-    },
-    {
-        "name": "action-planner",
-        "description": (
-            "Step 4 — Picks best of 4 alternative routes. "
-            "Returns ActionPlan with CRM payload."
-        ),
-        "model": claude_fast,
-        "system_prompt": ACTION_PLANNER_PROMPT,
-        "tools": [],
-        "response_format": ActionPlan,
-    },
-]
+def _load_fleet_data_block() -> str:
+    """Current active_shipments.json as a JSON string for prompt injection."""
+    try:
+        with open(SHIPMENTS_FILE, "r") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return "{}"
+    return json.dumps(data, indent=2)
+
+
+def _fleet_data_section() -> str:
+    """Prompt block embedding the live fleet data so subagents never read files."""
+    return (
+        "\n\n## LIVE FLEET DATA (active_shipments.json) — already loaded\n"
+        "All shipment records, routes, thresholds, and alternative_routes are below.\n"
+        "Use this directly. Do NOT call read_file or open any file — everything you need is here.\n\n"
+        "```json\n" + _load_fleet_data_block() + "\n```\n"
+    )
+
+
+def _build_subagents() -> list[dict]:
+    """Build subagents with the live fleet data injected into the data-driven ones."""
+    fleet = _fleet_data_section()
+    return [
+        {
+            "name": "hazard-detector",
+            "description": (
+                "Step 1 — Reads raw news/alert text only. "
+                "Returns HazardExtraction (what happened + why_brief)."
+            ),
+            "model": claude_fast,
+            "system_prompt": EXTRACTOR_PROMPT,  # raw text only — no fleet data needed
+            "tools": [],
+            "response_format": HazardExtraction,
+        },
+        {
+            "name": "shipment-analyzer",
+            "description": (
+                "Step 2 — Uses pre-loaded fleet data. "
+                "Returns FleetScoutOutput (who is on the road)."
+            ),
+            "model": claude_fast,
+            "system_prompt": FLEET_SCOUT_PROMPT + fleet,
+            "tools": [],
+            "response_format": FleetScoutOutput,
+        },
+        {
+            "name": "impact-analyzer",
+            "description": (
+                "Step 3 — Reads raw news + pre-loaded fleet data; decides who is hit. "
+                "Returns ImpactAnalysis (who is hit + why_brief)."
+            ),
+            "model": claude_fast,
+            "system_prompt": ANALYZER_PROMPT + fleet,
+            "tools": [],
+            "response_format": ImpactAnalysis,
+        },
+        {
+            "name": "action-planner",
+            "description": (
+                "Step 4 — Picks best of 4 alternative routes. "
+                "Returns ActionPlan with CRM payload."
+            ),
+            "model": claude_fast,
+            "system_prompt": ACTION_PLANNER_PROMPT + fleet,
+            "tools": [],
+            "response_format": ActionPlan,
+        },
+    ]
 
 ORCHESTRATOR_SYSTEM_PROMPT = """\
 You are the BioRoute Emergency Orchestrator. You coordinate real specialist agents — never skip steps.
 
 ## Coordinator voice (you only)
 - Speak in short plain sentences (≤20 words). No markdown, no bold, no tables.
-- Maximum 5 coordinator messages for the whole run.
-- After each subagent: say what you learned in your own words, then what you call next.
+- Maximum 2 coordinator messages for the WHOLE run: one at the very start, one at the very end.
+- Do NOT narrate between steps. The UI shows each subagent's progress on its own — you do not need to announce them.
 - Do NOT copy display_summary or why_brief from subagents verbatim.
 - Say "received the alert" at most once.
 
@@ -193,9 +218,11 @@ You are the BioRoute Emergency Orchestrator. You coordinate real specialist agen
 Always keep the user's FULL RAW ALERT TEXT (the original news message).
 - NEVER paste hazard-extractor JSON into fleet-scout, impact-analyzer, or action-planner.
 - Those agents must read and think from the rough news themselves.
+- Fleet data (active_shipments.json) is ALREADY loaded into every subagent's context. They do NOT read files. Just pass the raw alert text (plus the prior subagent JSON where a step says so).
 
 ## Mandatory workflow (in order)
-1. write_todos — list steps you will actually run
+1. write_todos — call this EXACTLY ONCE, at the very start, to list all steps you will run.
+   NEVER call write_todos again. Do NOT re-emit it or update statuses — the UI tracks progress itself.
 2. task('hazard-detector', paste FULL raw alert text only)
 3. If hazard_detected: task('shipment-analyzer', paste FULL raw alert text only)
 4. If hazard_detected: task('impact-analyzer', paste FULL raw alert text, then shipment-analyzer JSON — no hazard JSON)
@@ -259,7 +286,7 @@ def build_agent():
         model=claude_fast,
         name="bioroute-orchestrator",
         tools=[update_crm_tool, notify_tool, write_summary_tool],
-        subagents=SUBAGENTS,
+        subagents=_build_subagents(),
         system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
         middleware=MIDDLEWARE,
         backend=backend,
@@ -267,11 +294,7 @@ def build_agent():
     )
 
 
-_agent = None
-
-
 def get_agent():
-    global _agent
-    if _agent is None:
-        _agent = build_agent()
-    return _agent
+    # Rebuild each run so the injected fleet data reflects the current
+    # active_shipments.json (server resets it to baseline before every run).
+    return build_agent()

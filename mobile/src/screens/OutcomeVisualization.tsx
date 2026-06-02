@@ -22,10 +22,14 @@ import ScreenHeader from '../components/ScreenHeader';
 import ReasonMarkdownPanel from '../components/ReasonMarkdownPanel';
 import { WebView } from 'react-native-webview';
 import MAP_HTML from '../constants/mapHtml';
+import SendNotificationModal from '../components/SendNotificationModal';
 import { FontFamily, pageStyles, Page } from '../theme';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL
   ?? Platform.select({ android: 'http://10.0.2.2:8000', ios: 'http://localhost:8000', default: 'http://localhost:8000' });
+
+const DEFAULT_NOTIF_EMAIL = 'uzairyasin395@gmail.com';
+const DEFAULT_NOTIF_PHONE = '923236891550';
 
 export interface ShipmentState {
   shipmentId: string;
@@ -83,6 +87,7 @@ export default function OutcomeVisualization({
   const [confidenceScore, setConfidenceScore] = useState<number | null>(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const [showNotifDialog, setShowNotifDialog] = useState(false);
 
   const webViewRef = React.useRef<any>(null);
 
@@ -251,6 +256,12 @@ export default function OutcomeVisualization({
       ? beforeState ?? afterState!
       : afterState ?? beforeState!;
   const shipmentLabel = current.shipmentId.replace('SHP-', '#');
+  const notifDefaultMessage =
+    (summaryMarkdown
+      ? summaryMarkdown.replace(/[#*_`>]/g, '').replace(/\n{3,}/g, '\n\n').trim()
+      : '') ||
+    `Shipment ${current.shipmentId} (${current.cargo}) — status: ${current.status}. ` +
+      `Route: ${current.route}. Destination: ${current.destination}.`;
   const fleetUpdated = Boolean(
     afterState && beforeState &&
     (afterState.route !== beforeState.route ||
@@ -493,6 +504,27 @@ export default function OutcomeVisualization({
         </TouchableOpacity>
       )}
 
+      {/* ── Send to WhatsApp & Email ─────────────────────── */}
+      {pipelineComplete && (
+        <TouchableOpacity
+          style={styles.sendNotifBtn}
+          onPress={() => setShowNotifDialog(true)}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="paper-plane-outline" size={16} color="#FFF" />
+          <Text style={styles.sendNotifBtnTxt}>Send these messages to WhatsApp & Email</Text>
+        </TouchableOpacity>
+      )}
+
+      <SendNotificationModal
+        visible={showNotifDialog}
+        onClose={() => setShowNotifDialog(false)}
+        defaultEmail={DEFAULT_NOTIF_EMAIL}
+        defaultPhone={DEFAULT_NOTIF_PHONE}
+        defaultSubject={`BioRoute Alert — ${current.shipmentId}`}
+        defaultMessage={notifDefaultMessage}
+      />
+
       {!summaryMarkdown && onRefreshSummary ? (
         <TouchableOpacity style={pageStyles.secondaryBtn} onPress={onRefreshSummary}>
           <Ionicons name="document-text-outline" size={16} color="#6B7280" />
@@ -641,4 +673,13 @@ const styles = StyleSheet.create({
   },
   pdfBtnDisabled: { opacity: 0.6 },
   pdfBtnTxt: { fontFamily: FontFamily.semiBold, fontSize: 13, color: '#4F46E5' },
+
+  // Send to WhatsApp & Email
+  sendNotifBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 13, borderRadius: 99,
+    backgroundColor: '#047857',
+    marginBottom: 12,
+  },
+  sendNotifBtnTxt: { fontFamily: FontFamily.semiBold, fontSize: 13, color: '#FFF' },
 });

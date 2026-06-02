@@ -14,11 +14,15 @@ Design rules (from docs):
 from __future__ import annotations
 
 import json
+import logging
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
 from langchain.tools import tool
+
+logger = logging.getLogger("bioroute.notify")
 
 # Absolute path to the data directory — safe to use from any working directory
 DATA_DIR = Path(__file__).parent / "data"
@@ -27,6 +31,41 @@ BASELINE_SHIPMENTS_FILE = DATA_DIR / "active_shipments_baseline.json"
 NOTIFICATIONS_FILE = DATA_DIR / "notifications.json"
 SUMMARY_FILE = DATA_DIR / "summary.md"
 HISTORY_FILE = DATA_DIR / "history.json"
+
+# Default real-delivery recipients (overridable via .env). Used for the
+# automatic background email/WhatsApp dispatch when the agent reroutes.
+DEFAULT_NOTIFY_EMAIL = os.getenv("NOTIFY_DEFAULT_EMAIL", "uzairyasin395@gmail.com").strip()
+DEFAULT_NOTIFY_PHONE = os.getenv("NOTIFY_DEFAULT_PHONE", "923236891550").strip()
+AUTO_SEND_NOTIFICATIONS = os.getenv("AUTO_SEND_NOTIFICATIONS", "true").strip().lower() in (
+    "1", "true", "yes", "on",
+)
+
+
+def _dispatch_real_notifications(subject: str, email_body: str, whatsapp_text: str) -> None:
+    """Fire email + WhatsApp in background threads — non-blocking, best-effort.
+
+    Runs during the agent pipeline so a confirmed reroute is delivered for real.
+    Each channel is guarded; failures are logged and never break the agent run.
+    """
+    if not AUTO_SEND_NOTIFICATIONS:
+        return
+
+    def _email() -> None:
+        try:
+            from langchain_agent.email_service import send_email
+            send_email(DEFAULT_NOTIFY_EMAIL, subject, email_body)
+        except Exception:
+            logger.exception("[notify] background email dispatch failed")
+
+    def _whatsapp() -> None:
+        try:
+            from langchain_agent.whatsapp_service import send_whatsapp_template
+            send_whatsapp_template(DEFAULT_NOTIFY_PHONE, whatsapp_text[:1024])
+        except Exception:
+            logger.exception("[notify] background whatsapp dispatch failed")
+
+    threading.Thread(target=_email, daemon=True).start()
+    threading.Thread(target=_whatsapp, daemon=True).start()
 
 
 def append_history(event_type: str, payload: dict) -> None:
@@ -303,6 +342,9 @@ def notify_tool(
     timestamp = datetime.now(timezone.utc).isoformat()
     ts_short = datetime.now().strftime('%H%M%S')
 
+    recipient_email = "uzairyasin395@gmail.com"
+    recipient_phone = "923236891550"  # WhatsApp recipient number (no + prefix)
+
     records = [
         {
             "notification_id": f"NOTIF-{shipment_id}-HOSP-{ts_short}",
@@ -310,9 +352,17 @@ def notify_tool(
             "shipment_id": shipment_id,
             "recipient_type": "hospital",
             "recipient": recipient,
+            "recipient_email": recipient_email,
+            "recipient_phone": recipient_phone,
             "urgency_level": urgency_level,
             "status": "SENT (simulated)",
-            "channels": ["email"],
+            "email_status": "pending",
+            "email_sent_at": None,
+            "email_error": None,
+            "whatsapp_status": "pending",
+            "whatsapp_sent_at": None,
+            "whatsapp_error": None,
+            "channels": ["email", "whatsapp"],
             "subject": f"[URGENT] Shipment {shipment_id} — Route Change & Updated Delivery Time",
             "message": notification_message,
         },
@@ -322,9 +372,17 @@ def notify_tool(
             "shipment_id": shipment_id,
             "recipient_type": "driver",
             "recipient": f"Driver — Truck {shipment_id}",
+            "recipient_email": recipient_email,
+            "recipient_phone": recipient_phone,
             "urgency_level": urgency_level,
             "status": "SENT (simulated)",
-            "channels": ["sms", "radio"],
+            "email_status": "pending",
+            "email_sent_at": None,
+            "email_error": None,
+            "whatsapp_status": "pending",
+            "whatsapp_sent_at": None,
+            "whatsapp_error": None,
+            "channels": ["sms", "radio", "whatsapp"],
             "subject": f"ACTION REQUIRED: New Route for {shipment_id}",
             "message": driver_message or f"ROUTE CHANGE for {shipment_id}. Do NOT continue on current road. Follow new route instructions from your GPS. Cargo is time-sensitive. Confirm receipt immediately.",
         },
@@ -334,9 +392,17 @@ def notify_tool(
             "shipment_id": shipment_id,
             "recipient_type": "coordinator",
             "recipient": "Fleet Operations Coordinator",
+            "recipient_email": recipient_email,
+            "recipient_phone": recipient_phone,
             "urgency_level": urgency_level,
             "status": "SENT (simulated)",
-            "channels": ["email", "dashboard"],
+            "email_status": "pending",
+            "email_sent_at": None,
+            "email_error": None,
+            "whatsapp_status": "pending",
+            "whatsapp_sent_at": None,
+            "whatsapp_error": None,
+            "channels": ["email", "dashboard", "whatsapp"],
             "subject": f"[Fleet Alert] Emergency Reroute Executed — {shipment_id}",
             "message": coordinator_message or notification_message[:400],
         },
@@ -346,9 +412,17 @@ def notify_tool(
             "shipment_id": shipment_id,
             "recipient_type": "owner",
             "recipient": "Company Owner / CEO",
+            "recipient_email": recipient_email,
+            "recipient_phone": recipient_phone,
             "urgency_level": urgency_level,
             "status": "SENT (simulated)",
-            "channels": ["email"],
+            "email_status": "pending",
+            "email_sent_at": None,
+            "email_error": None,
+            "whatsapp_status": "pending",
+            "whatsapp_sent_at": None,
+            "whatsapp_error": None,
+            "channels": ["email", "whatsapp"],
             "subject": f"[Executive Alert] Shipment {shipment_id} Rerouted — AI Action Taken",
             "message": owner_message or (
                 f"Dear Owner,\n\n"
@@ -377,6 +451,14 @@ def notify_tool(
     existing.setdefault("notifications", []).extend(records)
     with open(NOTIFICATIONS_FILE, "w") as f:
         json.dump(existing, f, indent=2)
+
+    # Deliver for real (email to hospital contact, WhatsApp to driver) in the
+    # background — does not block the agent stream.
+    _dispatch_real_notifications(
+        subject=f"[BioRoute] Shipment {shipment_id} — Emergency Reroute",
+        email_body=notification_message,
+        whatsapp_text=driver_message or notification_message,
+    )
 
     mobile_notification = (
         f"🚨 BioRoute Alert — {shipment_id}\n"

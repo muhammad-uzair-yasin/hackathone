@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-05-21T04:25:27.766931+00:00",
+  "last_updated": "2026-06-02T04:30:11.211800+00:00",
   "company": "BioRoute Cold-Chain Logistics \u2014 Pakistan",
   "active_shipments": [
     {
@@ -8,10 +8,10 @@
       "cargo_value_usd": 50000,
       "max_idling_temp_threshold_celsius": 38,
       "max_safe_idle_minutes": 45,
-      "current_status": "In Transit (On Time)",
-      "eta_minutes": 40,
+      "current_status": "Emergency Reroute",
+      "eta_minutes": 52,
       "destination_contact": "admin@liaquathospital.edu.pk",
-      "route_name": "N-5 Karachi \u2192 Jamshoro",
+      "route_name": "M-9 Thatta Bypass",
       "route": [
         {
           "place": "Karachi Depot",
@@ -19,14 +19,14 @@
           "lon": 67.36
         },
         {
-          "place": "Hyderabad West",
-          "lat": 25.382,
-          "lon": 68.368
+          "place": "Thatta Bypass",
+          "lat": 24.748,
+          "lon": 67.925
         },
         {
-          "place": "Liaquat Hospital, Jamshoro",
-          "lat": 25.428,
-          "lon": 68.278
+          "place": "Hyderabad Cold-Vault",
+          "lat": 25.401,
+          "lon": 68.342
         }
       ],
       "alternative_routes": [

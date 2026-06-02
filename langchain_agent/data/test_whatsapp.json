@@ -1,0 +1,13 @@
+{
+  "test_whatsapp": [
+    {
+      "id": "TEST-WA-033748",
+      "timestamp": "2026-06-02T03:37:48.323366+00:00",
+      "recipient_phone": "923236891550",
+      "message": "Test WhatsApp message from BioRoute!",
+      "whatsapp_status": "FAILED",
+      "whatsapp_sent_at": null,
+      "whatsapp_error": "WhatsApp API send failed (see logs)"
+    }
+  ]
+}
